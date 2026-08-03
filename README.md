@@ -1,9 +1,8 @@
-> Part of **my boss** multi-repo. See sibling `myboss-platform` for full-stack deploy.
-
-
-# the Boss — Admin Console
+# myboss-admin
 
 React 19 + Vite 6 admin portal (V2 black sidebar layout).
+
+Part of the **my boss** multi-repo layout — see [`../README.md`](../README.md) and sibling `myboss-platform` for full-stack deploy.
 
 ---
 
@@ -11,75 +10,137 @@ React 19 + Vite 6 admin portal (V2 black sidebar layout).
 
 | Tool | Version | Install |
 |------|---------|---------|
-| **Node.js** | 20 LTS | [nodejs.org](https://nodejs.org/) |
+| **Node.js** | **20 LTS** | [nodejs.org](https://nodejs.org/) |
 | **npm** | 10+ | Bundled with Node |
-| **Backend** | Ports 3001–3005 or gateway :8090 | See [`apps/backend/README.md`](../backend/README.md) |
+| **Backend** | Running | Ports 3001–3005 or gateway :8090 |
 
-**Pinned runtime (lockfile):** React 19.2.8 · Vite 6.4.3 · TypeScript 5.7.3 · axios 1.18.1
+**Pinned (lockfile):** React 19.2.8 · Vite 6.4.3 · TypeScript 5.7.3 · axios 1.18.1
 
 ---
 
-## Files NOT in git — how to get them
+## Files NOT in git
 
 | File / folder | In git? | How to obtain |
 |---------------|---------|---------------|
-| `.env.development` | No | `cp .env.example .env.development` in this folder |
+| `.env.development` | No | `cp .env.example .env.development` |
 | `.env.local-demo` | No | Copy from `.env.example`, use gateway-relative URLs (commented block) |
-| `.env.demo`, `.env.docker` | No | Create for your environment or use Docker build args |
+| `.env.demo`, `.env.docker` | No | For custom builds |
 | `node_modules/` | No | `npm install` |
 | `dist/` | No | `npm run build` or `npm run build:demo` |
 | `tsconfig.tsbuildinfo` | No | Created by `tsc` during build |
 
-**Safe in git:** `.env.example` (API URL templates only).
+**Safe in git:** `.env.example` (API URL templates only)
 
 ---
 
-## Local development — start
+## Run locally — step by step (Vite dev)
 
-**1. Start backend** (repo root):
+Best for UI development with hot reload.
+
+### 1. Start backend
+
+**Option A — Docker (recommended):**
 
 ```bash
-cd apps/backend && npm install && npm run start:dev
+cd ../myboss-platform
+cp .env.example .env
+./scripts/deploy-demo-server.sh 127.0.0.1
 ```
 
-**2. Configure admin env:**
+**Option B — Node:**
 
 ```bash
-cd apps/admin-portal
+cd ../myboss-backend
+cp .env.example .env
+npm install && npm run build -w @myboss/common && npm run start:dev
+```
+
+### 2. Configure admin env
+
+```bash
+cd myboss-admin
 cp .env.example .env.development
 npm install
+```
+
+Default `.env.development` points to direct service ports (`localhost:3001`–`3005`).
+
+### 3. Start dev server
+
+```bash
 npm run dev
 ```
 
 Open: http://localhost:5173
 
-Login: `admin@orange.com` / `admin123` → OTP (demo mode)
+**Login:** `admin@orange.com` / `admin123` → OTP (demo mode auto-fills)
 
 ---
 
-## Demo via Docker gateway (recommended)
+## Run via Docker gateway (demo / team testing)
 
-From **repo root**:
+From **`myboss-platform`**:
 
 ```bash
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-docker compose -f infrastructure/docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
 Open: http://127.0.0.1:8090/login (prefer gateway over raw :8081)
 
-Public tunnel: run `./infrastructure/scripts/start-demo-tunnel.sh` → URL in `demo-public-url.txt` (local file, not in git)
+Admin is built with gateway-relative API paths (`/auth/api/v1`, etc.).
 
 ---
 
-## Build
+## Deploy live
+
+### Docker (included in platform deploy)
 
 ```bash
-npm run build:demo          # Demo Docker image
-npm run build:local-demo    # Local gateway paths
-npm run build:production    # Production
-npm test
+cd /opt/myboss/myboss-platform
+cp .env.example .env
+./scripts/deploy-demo-server.sh <SERVER_IP>
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
+
+Admin: http://`<SERVER_IP>`:8090/login
+
+Public tunnel:
+
+```bash
+./scripts/start-demo-tunnel.sh
+# Admin: https://<tunnel>/login
+```
+
+### Static build (CDN / nginx)
+
+```bash
+cd myboss-admin
+npm install
+
+# Production — set your API base URLs in .env.production
+npm run build:production
+
+# Demo — direct service ports on server IP
+npm run build:demo
+
+# Gateway-relative paths (same as Docker demo)
+npm run build:local-demo
+```
+
+Output: `dist/` → deploy to hosting or copy into nginx.
+
+---
+
+## Build commands
+
+| Command | Use case |
+|---------|----------|
+| `npm run dev` | Local Vite dev (:5173) |
+| `npm run build:local-demo` | Gateway :8090 / Cloudflare tunnel |
+| `npm run build:demo` | Direct LAN ports on demo server |
+| `npm run build:production` | Production CDN deploy |
+| `npm test` | Vitest unit tests |
 
 ---
 
@@ -91,22 +152,18 @@ npm test
 | Statistics | `/statistics` |
 | Squads | `/squads` |
 | Destinations | `/destinations` |
-| Unregistered | `/unregistered` (add employee here) |
+| Unregistered | `/unregistered` |
 | Notifications | `/notifications` |
 | Data extraction | `/extraction` |
 | Surveys | `/surveys` |
 | Photos | `/photos` |
-| Vests | `/vests` (vest size edit window + inventory) |
+| Vests | `/vests` |
 | Configuration | `/configuration` |
 | Audit log | `/audit` |
 
-Legacy: `/users` → `/unregistered`, `/dashboard` → `/`
-
 ---
 
-## API base paths
-
-When served via gateway (:8090):
+## API base paths (gateway :8090)
 
 ```
 /auth/api/v1   /user/api/v1   /config/api/v1   /squad/api/v1   /survey/api/v1
@@ -118,7 +175,7 @@ Swagger (squad): http://127.0.0.1:8090/squad/api/v1/docs
 
 ## Documentation
 
-| Doc | Purpose |
-|-----|---------|
-| [`docs/ADMIN_JOURNEY_COVERAGE.md`](../../docs/ADMIN_JOURNEY_COVERAGE.md) | Feature matrix |
-| [`docs/devops/DEVOPS.md`](../../docs/devops/DEVOPS.md) | Deploy & stack |
+| Doc | Path |
+|-----|------|
+| Admin feature matrix | [`../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md`](../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md) |
+| DevOps / deploy | [`../myboss-platform/docs/devops/DEVOPS.md`](../myboss-platform/docs/devops/DEVOPS.md) |

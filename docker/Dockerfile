@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY  ./
+COPY . ./
 ARG DEMO_HOST=localhost
 ARG BUILD_MODE=production
 # local-demo: relative /auth|/user|/config|/survey paths (gateway :8090 + Cloudflare tunnel).
