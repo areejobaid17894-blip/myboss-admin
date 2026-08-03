@@ -2,7 +2,7 @@
 
 React 19 + Vite 6 admin portal (V2 black sidebar layout).
 
-Part of the **my boss** multi-repo layout — see [`../README.md`](../README.md) and sibling `myboss-platform` for full-stack deploy.
+Part of the **my boss** multi-repo layout — see [`myboss-platform/docs/MULTI_REPO_SETUP.md`](../myboss-platform/docs/MULTI_REPO_SETUP.md) for full-stack deploy.
 
 ---
 
@@ -27,9 +27,10 @@ Part of the **my boss** multi-repo layout — see [`../README.md`](../README.md)
 | `.env.demo`, `.env.docker` | No | For custom builds |
 | `node_modules/` | No | `npm install` |
 | `dist/` | No | `npm run build` or `npm run build:demo` |
+| `coverage/` | No | Test output |
 | `tsconfig.tsbuildinfo` | No | Created by `tsc` during build |
 
-**Safe in git:** `.env.example` (API URL templates only)
+**In git:** `.env.example` (API URL templates only)
 
 ---
 
