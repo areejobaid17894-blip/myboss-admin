@@ -1,0 +1,29 @@
+:root {
+  /* Orange brand — aligned with mobile AppColors */
+  --boss-orange: #ff7900;
+  --boss-orange-dark: #e56a00;
+  --boss-orange-light: #fff3e8;
+  --boss-black: #1a1a1a;
+  --boss-grey-900: #2d2d2d;
+  --boss-grey-600: #6b7280;
+  --boss-grey-400: #9ca3af;
+  --boss-grey-200: #e5e7eb;
+  --boss-grey-100: #f3f4f6;
+  --boss-white: #ffffff;
+  --boss-error: #dc2626;
+  --boss-error-bg: #fef2f2;
+  --boss-success: #16a34a;
+  --boss-success-bg: #dcfce7;
+
+  --boss-radius-sm: 8px;
+  --boss-radius-md: 12px;
+  --boss-radius-lg: 14px;
+  --boss-radius-xl: 16px;
+
+  --boss-shadow-sm: 0 2px 8px rgba(26, 26, 26, 0.06);
+  --boss-shadow-md: 0 4px 24px rgba(26, 26, 26, 0.08);
+  --boss-shadow-orange: 0 0 0 3px rgba(255, 121, 0, 0.15);
+
+  --boss-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    sans-serif;
+}

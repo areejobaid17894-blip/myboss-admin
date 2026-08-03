@@ -1,0 +1,61 @@
+@import './styles/theme.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html[dir='rtl'] {
+  --boss-font: 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', var(--boss-font);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #333333;
+  background: #f2f2f2;
+  text-align: start;
+}
+
+h1,
+h2,
+h3,
+p {
+  text-align: start;
+}
+
+a {
+  color: var(--boss-orange);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  text-align: start;
+}
+
+input[type='email'],
+input[inputmode='numeric'] {
+  direction: ltr;
+}
+
+html[dir='rtl'] input[type='email'],
+html[dir='rtl'] input[inputmode='numeric'] {
+  text-align: end;
+}
+
+:focus-visible {
+  outline: 2px solid var(--boss-orange);
+  outline-offset: 2px;
+}
