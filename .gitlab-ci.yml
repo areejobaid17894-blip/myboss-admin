@@ -1,0 +1,25 @@
+stages:
+  - test
+  - build
+
+variables:
+  NODE_VERSION: "20"
+
+test:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci
+    - npm test
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+build:
+  stage: build
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci
+    - npm run build:local-demo
+  artifacts:
+    paths: [dist/]
+    expire_in: 1 week
