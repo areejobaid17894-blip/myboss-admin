@@ -1,46 +1,28 @@
 # myboss-admin
 
-React 19 + Vite 6 admin portal (V2 black sidebar layout).
+React 19 admin portal for squad management, surveys, notifications, and configuration — V2 black sidebar layout, Vite 6 dev server.
 
-Part of the **my boss** multi-repo layout — see [`myboss-platform/docs/MULTI_REPO_SETUP.md`](../myboss-platform/docs/MULTI_REPO_SETUP.md) for full-stack deploy.
+Talks to the backend through gateway-relative paths (`/auth/api/v1`, `/user/api/v1`, …) in demo mode, or direct service ports during local Vite development.
+
+Full stack setup: [`myboss-platform/docs/MULTI_REPO_SETUP.md`](../myboss-platform/docs/MULTI_REPO_SETUP.md)
 
 ---
 
 ## Prerequisites
 
-| Tool | Version | Install |
-|------|---------|---------|
-| **Node.js** | **20 LTS** | [nodejs.org](https://nodejs.org/) |
-| **npm** | 10+ | Bundled with Node |
-| **Backend** | Running | Ports 3001–3005 or gateway :8090 |
+Node 20 LTS · npm 10+ · a running backend (ports 3001–3005 or gateway :8090)
 
-**Pinned (lockfile):** React 19.2.8 · Vite 6.4.3 · TypeScript 5.7.3 · axios 1.18.1
+**Stack:** React 19.2 · Vite 6.4 · TypeScript 5.7 · axios 1.18
 
 ---
 
-## Files NOT in git
+## Local development (Vite, hot reload)
 
-| File / folder | In git? | How to obtain |
-|---------------|---------|---------------|
-| `.env.development` | No | `cp .env.example .env.development` |
-| `.env.local-demo` | No | Copy from `.env.example`, use gateway-relative URLs (commented block) |
-| `.env.demo`, `.env.docker` | No | For custom builds |
-| `node_modules/` | No | `npm install` |
-| `dist/` | No | `npm run build` or `npm run build:demo` |
-| `coverage/` | No | Test output |
-| `tsconfig.tsbuildinfo` | No | Created by `tsc` during build |
+Use this when you're working on admin UI.
 
-**In git:** `.env.example` (API URL templates only)
+**1. Start the backend**
 
----
-
-## Run locally — step by step (Vite dev)
-
-Best for UI development with hot reload.
-
-### 1. Start backend
-
-**Option A — Docker (recommended):**
+Docker (easiest):
 
 ```bash
 cd ../myboss-platform
@@ -48,7 +30,7 @@ cp .env.example .env
 ./scripts/deploy-demo-server.sh 127.0.0.1
 ```
 
-**Option B — Node:**
+Or Node directly:
 
 ```bash
 cd ../myboss-backend
@@ -56,46 +38,56 @@ cp .env.example .env
 npm install && npm run build -w @myboss/common && npm run start:dev
 ```
 
-### 2. Configure admin env
+**2. Configure and run admin**
 
 ```bash
 cd myboss-admin
 cp .env.example .env.development
 npm install
-```
-
-Default `.env.development` points to direct service ports (`localhost:3001`–`3005`).
-
-### 3. Start dev server
-
-```bash
 npm run dev
 ```
 
-Open: http://localhost:5173
+Open http://localhost:5173
 
-**Login:** `admin@orange.com` / `admin123` → OTP (demo mode auto-fills)
+Default `.env.development` points at direct service ports (`localhost:3001`–`3005`).
+
+**Login:** `admin@orange.com` / `admin123` → OTP (auto-fills in demo mode)
 
 ---
 
-## Run via Docker gateway (demo / team testing)
+## Demo / team testing via gateway
 
-From **`myboss-platform`**:
+For the same experience testers see — everything on port 8090:
 
 ```bash
+cd ../myboss-platform
 ./scripts/deploy-demo-server.sh 127.0.0.1
 ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
-Open: http://127.0.0.1:8090/login (prefer gateway over raw :8081)
+Admin: http://127.0.0.1:8090/login
 
-Admin is built with gateway-relative API paths (`/auth/api/v1`, etc.).
+Prefer the gateway over raw :8081 — the admin build uses relative API paths that match production Apigee routing.
+
+---
+
+## Local configuration
+
+| File | Purpose | Setup |
+|------|---------|-------|
+| `.env.development` | Vite dev server | `cp .env.example .env.development` |
+| `.env.local-demo` | Gateway-relative URLs | Copy from `.env.example` (commented block) |
+| `.env.demo`, `.env.docker` | Custom demo builds | As needed |
+| `node_modules/` | Dependencies | `npm install` |
+| `dist/` | Production build output | `npm run build` |
+
+Template: `.env.example`
 
 ---
 
 ## Deploy live
 
-### Docker (included in platform deploy)
+**Docker** (included in platform stack):
 
 ```bash
 cd /opt/myboss/myboss-platform
@@ -104,32 +96,20 @@ cp .env.example .env
 ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
-Admin: http://`<SERVER_IP>`:8090/login
+Admin: `http://<SERVER_IP>:8090/login`
 
-Public tunnel:
+Public tunnel: `./scripts/start-demo-tunnel.sh` → `https://<tunnel>/login`
 
-```bash
-./scripts/start-demo-tunnel.sh
-# Admin: https://<tunnel>/login
-```
-
-### Static build (CDN / nginx)
+**Static build** (CDN or nginx):
 
 ```bash
-cd myboss-admin
 npm install
-
-# Production — set your API base URLs in .env.production
-npm run build:production
-
-# Demo — direct service ports on server IP
-npm run build:demo
-
-# Gateway-relative paths (same as Docker demo)
-npm run build:local-demo
+npm run build:production   # set API URLs in .env.production
+npm run build:demo         # direct LAN ports on demo server
+npm run build:local-demo   # gateway-relative paths (matches Docker demo)
 ```
 
-Output: `dist/` → deploy to hosting or copy into nginx.
+Output goes to `dist/`.
 
 ---
 
@@ -164,7 +144,7 @@ Output: `dist/` → deploy to hosting or copy into nginx.
 
 ---
 
-## API base paths (gateway :8090)
+## API paths (gateway :8090)
 
 ```
 /auth/api/v1   /user/api/v1   /config/api/v1   /squad/api/v1   /survey/api/v1
@@ -174,9 +154,9 @@ Swagger (squad): http://127.0.0.1:8090/squad/api/v1/docs
 
 ---
 
-## Documentation
+## Further reading
 
-| Doc | Path |
-|-----|------|
+| Topic | Path |
+|-------|------|
 | Admin feature matrix | [`../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md`](../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md) |
 | DevOps / deploy | [`../myboss-platform/docs/devops/DEVOPS.md`](../myboss-platform/docs/devops/DEVOPS.md) |
