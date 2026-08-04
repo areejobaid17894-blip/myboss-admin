@@ -4,9 +4,9 @@ React 19 admin portal for squad management, surveys, notifications, and configur
 
 Talks to the backend through gateway-relative paths (`/auth/api/v1`, `/user/api/v1`, …) in demo mode, or direct service ports during local Vite development.
 
-Full stack setup: [`myboss-platform/docs/MULTI_REPO_SETUP.md`](../myboss-platform/docs/MULTI_REPO_SETUP.md)
+Full stack setup: [Multi-repo setup guide](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md) (**myboss-platform** repo)
 
-**New machine:** use Docker via `myboss-platform` — see [new machine checklist](../myboss-platform/docs/MULTI_REPO_SETUP.md#new-machine-checklist). For gateway demo builds, `.env.local-demo` is included (gateway-relative API paths).
+**New machine:** [New machine checklist](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md#new-machine-checklist). Gateway demo builds use `.env.local-demo` (included in this repo).
 
 ---
 
@@ -158,7 +158,8 @@ Swagger (squad): http://127.0.0.1:8090/squad/api/v1/docs
 
 ## Further reading
 
-| Topic | Path |
+| Topic | Link |
 |-------|------|
-| Admin feature matrix | [`../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md`](../myboss-platform/docs/ADMIN_JOURNEY_COVERAGE.md) |
-| DevOps / deploy | [`../myboss-platform/docs/devops/DEVOPS.md`](../myboss-platform/docs/devops/DEVOPS.md) |
+| Admin feature matrix | [ADMIN_JOURNEY_COVERAGE.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/ADMIN_JOURNEY_COVERAGE.md) |
+| DevOps / deploy | [DEVOPS.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/devops/DEVOPS.md) |
+| Full stack setup | [MULTI_REPO_SETUP.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md) |
