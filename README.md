@@ -6,6 +6,8 @@ Talks to the backend through gateway-relative paths (`/auth/api/v1`, `/user/api/
 
 Full stack setup: [`myboss-platform/docs/MULTI_REPO_SETUP.md`](../myboss-platform/docs/MULTI_REPO_SETUP.md)
 
+**New machine:** use Docker via `myboss-platform` — see [new machine checklist](../myboss-platform/docs/MULTI_REPO_SETUP.md#new-machine-checklist). For gateway demo builds, `.env.local-demo` is included (gateway-relative API paths).
+
 ---
 
 ## Prerequisites
