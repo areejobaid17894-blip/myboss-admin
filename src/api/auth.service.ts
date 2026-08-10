@@ -1,9 +1,5 @@
 import { authApi } from '@/api/client';
 
-export interface SignInRequest {
-  email: string;
-}
-
 export interface AdminSignInRequest {
   email: string;
   password: string;
@@ -36,7 +32,6 @@ export interface VerifyOtpResponse {
 }
 
 export const authService = {
-  signIn: (data: SignInRequest) => authApi.post('/auth/sign-in', data),
   adminSignIn: (data: AdminSignInRequest) =>
     authApi.post<AdminSignInResponse>('/auth/admin-sign-in', data),
   verifyOtp: (data: VerifyOtpRequest) =>
@@ -46,5 +41,4 @@ export const authService = {
   registerEligibleParticipant: (data: AddEligibleParticipantRequest) =>
     authApi.post('/auth/eligible-participants', data),
   signOut: () => authApi.post('/auth/sign-out'),
-  refresh: (refreshToken: string) => authApi.post('/auth/refresh', { refreshToken }),
 };

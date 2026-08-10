@@ -32,16 +32,10 @@ export interface SquadStats {
 
 export const squadService = {
   getStats: () => squadApi.get<SquadStats>('/squads/stats').then((r) => r.data),
-  list: (q?: string, governorate?: string) =>
-    squadApi
-      .get<Squad[]>('/squads', { params: { q, governorate } })
-      .then((r) => r.data),
-  /** Admin-only: includes members array required by console enrichment. */
   listAdmin: (q?: string, governorate?: string) =>
     squadApi
       .get<Squad[]>('/squads/admin/all', { params: { q, governorate } })
       .then((r) => r.data),
-  getById: (id: string) => squadApi.get<Squad>(`/squads/${id}`).then((r) => r.data),
   updateDestination: (squadId: string, destGov: string, dest: string) =>
     squadApi
       .put(`/squads/${squadId}/destination`, { destGov, dest, validated: true })

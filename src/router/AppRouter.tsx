@@ -13,7 +13,6 @@ import { PhotosPage } from '@/pages/PhotosPage';
 import { VestsPage } from '@/pages/VestsPage';
 import { AuditPage } from '@/pages/AuditPage';
 import { ConfigurationPage } from '@/pages/ConfigurationPage';
-import { UsersPage } from '@/pages/UsersPage';
 import { SurveysPage } from '@/pages/SurveysPage';
 
 function ProtectedLayout() {
@@ -39,7 +38,6 @@ export function AppRouter() {
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="squads" element={<SquadsPage />} />
           <Route path="destinations" element={<DestinationsPage />} />
-          <Route path="users" element={<UsersPage />} />
           <Route path="unregistered" element={<UnregisteredPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="extraction" element={<ExtractionPage />} />

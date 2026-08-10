@@ -26,6 +26,7 @@ export function NotificationsPage() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFileName, setImageFileName] = useState('');
   const [preview, setPreview] = useState(false);
   const [history, setHistory] = useState<NotificationRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -48,6 +49,21 @@ export function NotificationsPage() {
     loadHistory();
   }, [loadHistory]);
 
+  const handleImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please choose an image file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(String(reader.result ?? ''));
+      setImageFileName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const send = async () => {
     if (!title.trim() || !body.trim()) {
       showToast(t('notifMissingFields'));
@@ -65,6 +81,7 @@ export function NotificationsPage() {
       setTitle('');
       setBody('');
       setImageUrl('');
+      setImageFileName('');
       setPreview(false);
       showToast(`${t('notifSent')} — ${audience}`);
       await loadHistory();
@@ -115,13 +132,20 @@ export function NotificationsPage() {
           />
         </div>
         <div className="ac-field">
-          <label>Hero image URL (optional)</label>
+          <label>Hero image (optional)</label>
+          <input type="file" accept="image/*" onChange={handleImageFile} />
+          {imageFileName ? <p className="ac-hint">Selected: {imageFileName}</p> : null}
           <input
             type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://…"
+            value={imageUrl.startsWith('data:image') ? '' : imageUrl}
+            onChange={(e) => {
+              setImageUrl(e.target.value);
+              setImageFileName('');
+            }}
+            placeholder="Or paste a public https:// image URL"
+            style={{ marginTop: 8 }}
           />
+          <p className="ac-hint">Upload works on all phones. Pasted URLs must be public https:// (not localhost).</p>
         </div>
         <button type="button" className="ac-btn ac-btn-orange" onClick={send} disabled={sending}>
           {sending ? t('loadingData') : t('sendNotification')}
@@ -167,6 +191,13 @@ export function NotificationsPage() {
             <div style={{ fontSize: '0.82rem', color: 'var(--ac-gray-mid)' }}>
               {body || t('notifMessagePlaceholder')}
             </div>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                style={{ width: '100%', marginTop: 10, borderRadius: 10, maxHeight: 180, objectFit: 'cover' }}
+              />
+            ) : null}
           </div>
         )}
       </div>

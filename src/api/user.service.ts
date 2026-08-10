@@ -33,8 +33,5 @@ export interface CreateUserPayload {
 export const userService = {
   getAll: (page = 1, pageSize = 50) =>
     userApi.get<PaginatedUsers>('/users', { params: { page, pageSize } }),
-  getById: (id: string) => userApi.get<User>(`/users/${id}`),
   create: (data: CreateUserPayload) => userApi.post<User>('/users', data),
-  update: (id: string, data: Partial<User>) => userApi.put<User>(`/users/${id}`, data),
-  remove: (id: string) => userApi.delete(`/users/${id}`),
 };

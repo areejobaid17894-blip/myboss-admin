@@ -34,7 +34,10 @@ const NAV_SECTIONS = [
   },
   {
     labelKey: 'navSystem',
-    items: [{ to: '/audit', key: 'navAudit', icon: '≡' }],
+    items: [
+      { to: '/configuration', key: 'navConfiguration', icon: '⚙' },
+      { to: '/audit', key: 'navAudit', icon: '≡' },
+    ],
   },
 ] as const;
 

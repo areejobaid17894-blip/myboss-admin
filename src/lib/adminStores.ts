@@ -58,10 +58,6 @@ export function loadNotificationHistory(): NotificationRecord[] {
   ]);
 }
 
-export function saveNotificationHistory(items: NotificationRecord[]) {
-  writeJson(NOTIF_KEY, items);
-}
-
 export function loadAuditLog(): AuditRecord[] {
   return readJson(AUDIT_KEY, [
     {

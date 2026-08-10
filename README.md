@@ -53,6 +53,8 @@ Open http://localhost:5173
 
 Default `.env.development` points at direct service ports (`localhost:3001`–`3005`).
 
+**Data layer:** Backend uses a single shared MariaDB database (`myboss`) when `DB_ENABLED=true`. Demo Docker runs in-memory by default. See [DATABASE.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/database/DATABASE.md).
+
 **Login:** `admin@orange.com` / `admin123` → OTP (auto-fills in demo mode)
 
 ---
@@ -136,7 +138,7 @@ Output goes to `dist/`.
 | Squads | `/squads` |
 | Destinations | `/destinations` |
 | Unregistered | `/unregistered` |
-| Notifications | `/notifications` |
+| Notifications | `/notifications` — compose in-app + push (requires backend FCM) |
 | Data extraction | `/extraction` |
 | Surveys | `/surveys` |
 | Photos | `/photos` |
@@ -149,8 +151,10 @@ Output goes to `dist/`.
 ## API paths (gateway :8090)
 
 ```
-/auth/api/v1   /user/api/v1   /config/api/v1   /squad/api/v1   /survey/api/v1
+/auth/api/v1   /user/api/v1   /config/api/v1   /squad/api/v1   /survey/api/v1   /notification/api/v1
 ```
+
+Push notifications: admin **Notifications** page triggers survey-service → notification-service (FCM). See [PUSH_FIREBASE_SETUP.md](../myboss-platform/docs/PUSH_FIREBASE_SETUP.md).
 
 Swagger (squad): http://127.0.0.1:8090/squad/api/v1/docs
 
@@ -160,6 +164,8 @@ Swagger (squad): http://127.0.0.1:8090/squad/api/v1/docs
 
 | Topic | Link |
 |-------|------|
+| Database schema | [DATABASE.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/database/DATABASE.md) |
 | Admin feature matrix | [ADMIN_JOURNEY_COVERAGE.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/ADMIN_JOURNEY_COVERAGE.md) |
+| Push notifications | [PUSH_FIREBASE_SETUP.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/PUSH_FIREBASE_SETUP.md) |
 | DevOps / deploy | [DEVOPS.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/devops/DEVOPS.md) |
 | Full stack setup | [MULTI_REPO_SETUP.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md) |

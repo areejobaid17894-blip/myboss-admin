@@ -43,7 +43,6 @@ export interface CompanyReport {
 
 export const surveyService = {
   getAll: () => surveyApi.get<DynamicSurvey[]>('/surveys').then((r) => r.data),
-  getById: (id: string) => surveyApi.get<DynamicSurvey>(`/surveys/${id}`).then((r) => r.data),
   create: (data: Partial<DynamicSurvey>) => surveyApi.post('/surveys', data).then((r) => r.data),
   update: (id: string, data: Partial<DynamicSurvey>) => surveyApi.put(`/surveys/${id}`, data).then((r) => r.data),
   remove: (id: string) => surveyApi.delete(`/surveys/${id}`).then((r) => r.data),
