@@ -14,6 +14,7 @@ import { VestsPage } from '@/pages/VestsPage';
 import { AuditPage } from '@/pages/AuditPage';
 import { ConfigurationPage } from '@/pages/ConfigurationPage';
 import { SurveysPage } from '@/pages/SurveysPage';
+import { UsersPage } from '@/pages/UsersPage';
 
 function ProtectedLayout() {
   const { isAuthenticated } = useAuth();
@@ -46,7 +47,7 @@ export function AppRouter() {
           <Route path="vests" element={<VestsPage />} />
           <Route path="audit" element={<AuditPage />} />
           <Route path="configuration" element={<ConfigurationPage />} />
-          <Route path="users" element={<Navigate to="/unregistered" replace />} />
+          <Route path="users" element={<UsersPage />} />
           <Route path="analytics" element={<Navigate to="/statistics" replace />} />
           <Route path="dashboard" element={<Navigate to="/" replace />} />
         </Route>

@@ -92,7 +92,7 @@ export function LoginPage() {
 
       try {
         const { data } = await authService.verifyOtp({ sessionId: activeSessionId, code });
-        login(data.accessToken);
+        login(data.accessToken, data.refreshToken);
         navigate('/', { replace: true });
       } catch (err) {
         setError(getApiErrorMessage(err, t));

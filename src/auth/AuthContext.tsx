@@ -6,25 +6,26 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { clearTokens, getAccessToken, setTokens } from '@/auth/tokenStorage';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
-  login: (accessToken: string) => void;
+  login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('access_token'));
+  const [token, setToken] = useState<string | null>(() => getAccessToken());
 
-  const login = useCallback((accessToken: string) => {
-    localStorage.setItem('access_token', accessToken);
+  const login = useCallback((accessToken: string, refreshToken: string) => {
+    setTokens(accessToken, refreshToken);
     setToken(accessToken);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('access_token');
+    clearTokens();
     setToken(null);
   }, []);
 

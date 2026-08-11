@@ -133,14 +133,14 @@ export function useAdminData() {
       const [statsRes, squadsRes, usersRes, reportRes, galleryRes, settingsRes] = await Promise.all([
         squadService.getStats(),
         squadService.listAdmin(),
-        userService.getAll(1, 100),
+        userService.getAll(1, 100, { role: 'employee' }),
         surveyService.getCompanyReport().catch(() => null),
         galleryService.list(undefined, 'employee').catch(() => [] as GalleryItem[]),
         configService.getEmployeeSettings().catch(() => null),
       ]);
       setStats(statsRes);
       setSquadsRaw(Array.isArray(squadsRes) ? squadsRes : []);
-      setUsers((usersRes.data?.items ?? []).filter((u) => u.role === 'employee'));
+      setUsers(usersRes.data?.items ?? []);
       setReport(reportRes);
       setGallery(galleryRes);
       setSettings(settingsRes?.data ?? null);

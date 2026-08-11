@@ -19,6 +19,7 @@ const NAV_SECTIONS = [
     labelKey: 'navOperations',
     items: [
       { to: '/destinations', key: 'navDestinations', icon: '➤' },
+      { to: '/users', key: 'navUsers', icon: '👤' },
       { to: '/unregistered', key: 'navUnregistered', icon: '⚠' },
       { to: '/notifications', key: 'navNotifications', icon: '🔔' },
     ],
@@ -46,6 +47,7 @@ const PAGE_META: Record<string, { titleKey: TranslationKey; crumbKey: Translatio
   '/statistics': { titleKey: 'navStatistics', crumbKey: 'crumbStatistics' },
   '/squads': { titleKey: 'navSquads', crumbKey: 'crumbSquads' },
   '/destinations': { titleKey: 'navDestinations', crumbKey: 'crumbDestinations' },
+  '/users': { titleKey: 'navUsers', crumbKey: 'crumbUsers' },
   '/unregistered': { titleKey: 'navUnregistered', crumbKey: 'crumbUnregistered' },
   '/notifications': { titleKey: 'navNotifications', crumbKey: 'crumbNotifications' },
   '/extraction': { titleKey: 'navExtraction', crumbKey: 'crumbExtraction' },

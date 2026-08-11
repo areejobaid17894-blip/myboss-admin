@@ -23,6 +23,18 @@ export interface PaginatedUsers {
   totalPages: number;
 }
 
+export interface UserListFilters {
+  id?: string;
+  search?: string;
+  email?: string;
+  role?: string;
+  onboardingCompleted?: boolean;
+  governorate?: string;
+  hasSquad?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface CreateUserPayload {
   firstName: string;
   lastName: string;
@@ -30,8 +42,26 @@ export interface CreateUserPayload {
   role?: string;
 }
 
+function buildListParams(filters: UserListFilters = {}) {
+  const params: Record<string, string | number | boolean> = {};
+  if (filters.page) params.page = filters.page;
+  if (filters.pageSize) params.pageSize = filters.pageSize;
+  if (filters.id?.trim()) params.id = filters.id.trim();
+  if (filters.search?.trim()) params.search = filters.search.trim();
+  if (filters.email?.trim()) params.email = filters.email.trim();
+  if (filters.role) params.role = filters.role;
+  if (filters.governorate) params.governorate = filters.governorate;
+  if (filters.onboardingCompleted !== undefined) params.onboardingCompleted = filters.onboardingCompleted;
+  if (filters.hasSquad !== undefined) params.hasSquad = filters.hasSquad;
+  return params;
+}
+
 export const userService = {
-  getAll: (page = 1, pageSize = 50) =>
-    userApi.get<PaginatedUsers>('/users', { params: { page, pageSize } }),
+  list: (filters: UserListFilters = {}) =>
+    userApi.get<PaginatedUsers>('/users', { params: buildListParams(filters) }),
+  getAll: (page = 1, pageSize = 100, filters: Omit<UserListFilters, 'page' | 'pageSize'> = {}) =>
+    userApi.get<PaginatedUsers>('/users', {
+      params: buildListParams({ ...filters, page, pageSize, role: filters.role ?? 'employee' }),
+    }),
   create: (data: CreateUserPayload) => userApi.post<User>('/users', data),
 };

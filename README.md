@@ -4,9 +4,9 @@ React 19 admin portal for squad management, surveys, notifications, and configur
 
 Talks to the backend through gateway-relative paths (`/auth/api/v1`, `/user/api/v1`, …) in demo mode, or direct service ports during local Vite development.
 
-Full stack setup: [Multi-repo setup guide](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md) (**myboss-platform** repo)
+Full stack setup: [New device setup guide](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) (**myboss-platform** repo)
 
-**New machine:** [New machine checklist](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/MULTI_REPO_SETUP.md#new-machine-checklist). Gateway demo builds use `.env.local-demo` (included in this repo).
+**New machine:** [`NEW_DEVICE_SETUP.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) · Env vars & GitLab: [`ENV_AND_GITLAB_VARIABLES.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/deployment/ENV_AND_GITLAB_VARIABLES.md)
 
 ---
 
