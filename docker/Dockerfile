@@ -7,9 +7,10 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-ARG BUILD_MODE=apigee
-# apigee: VITE_API_GATEWAY_ORIGIN from .env.apigee (Orange Apigee — no local nginx gateway).
-# demo: direct LAN service ports (local Docker without Apigee).
+ARG BUILD_MODE=demo
+ARG DEMO_HOST=127.0.0.1
+# apigee: VITE_API_GATEWAY_ORIGIN from .env.apigee (Orange Apigee).
+# demo: direct service ports http://DEMO_HOST:3001–3005 (no Apigee).
 RUN if [ "$BUILD_MODE" = "apigee" ]; then \
       npm run build:apigee; \
     elif [ "$BUILD_MODE" = "demo" ]; then \

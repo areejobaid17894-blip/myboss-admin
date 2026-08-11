@@ -1,107 +1,38 @@
 # myboss-admin
 
-React 19 admin portal — V2 black sidebar, Vite 6 dev server.
+React admin portal — calls **microservices directly** on ports **3001–3005**.
 
-**Demo/production:** calls **Orange Apigee** (`https://api-demo.orange.com`).  
-**Local dev:** Vite on `:5173` with direct service ports `:3001–3006`.
-
-**Setup:** [`NEW_DEVICE_SETUP.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) · **URLs:** [`APIGEE_CLIENT_URLS.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/deployment/APIGEE_CLIENT_URLS.md)
+**Setup:** [`NEW_DEVICE_SETUP.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) · **URLs:** [`SERVICE_URLS.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/deployment/SERVICE_URLS.md)
 
 ---
 
-## Prerequisites
-
-Node 20 LTS · npm 10+ · running backend (Docker or npm)
-
----
-
-## Local development (recommended)
-
-**1. Start backend**
+## Local dev (recommended)
 
 ```bash
-cd ../myboss-platform
-cp .env.example .env
-./scripts/deploy-demo-server.sh 127.0.0.1
+cd ../myboss-platform && ./scripts/deploy-demo-server.sh 127.0.0.1
+cd ../myboss-admin && cp .env.example .env.development && npm install && npm run dev
 ```
 
-**2. Run admin**
+Open http://127.0.0.1:5173 — APIs on `localhost:3001–3005`.
+
+---
+
+## Docker (published)
 
 ```bash
-cd myboss-admin
-cp .env.example .env.development
-npm install
-npm run dev
+DEMO_HOST=127.0.0.1 docker compose -f ../myboss-platform/docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 ```
 
-Open http://127.0.0.1:5173 — login `admin@orange.com` / `admin123` → OTP (auto in demo)
+Open http://127.0.0.1:8081
+
+For a **deployed server**, set `DEMO_HOST=<public-or-lan-ip>` so the browser can reach the APIs.
 
 ---
 
-## Demo / production build (Apigee)
+## Login
 
-```bash
-npm run build:apigee
-# Deploy dist/ or use Docker admin on :8081 (built with Apigee URLs)
-```
+`admin@orange.com` / `admin123` → OTP
 
 ---
 
-## Build commands
-
-| Command | Use case |
-|---------|----------|
-| `npm run dev` | Local Vite (:5173, localhost APIs) |
-| `npm run build:apigee` | **Demo** — `https://api-demo.orange.com` |
-| `npm run build:production` | Production CDN |
-| `npm run build:demo` | Direct LAN ports (local Docker) |
-| `npm test` | Vitest |
-
----
-
-## Deploy live
-
-```bash
-cd /opt/myboss/myboss-platform
-./scripts/deploy-demo-server.sh <SERVER_IP>
-# Admin at http://<SERVER_IP>:8081 (Apigee APIs)
-```
-
-Or static: `npm run build:apigee` → deploy `dist/` to CDN.
-
----
-
-## Navigation (V2)
-
-Overview `/` · Statistics `/statistics` · Squads `/squads` · Destinations `/destinations` · Unregistered `/unregistered` · Notifications `/notifications` · Surveys `/surveys` · Photos `/photos` · Configuration `/configuration` · Audit `/audit`
-
----
-
-## API paths (Apigee)
-
-```
-/auth/api/v1   /user/api/v1   /config/api/v1   /squad/api/v1   /survey/api/v1   /notification/api/v1
-```
-
-Base: `https://api-demo.orange.com` (see `.env.apigee`)
-
----
-
-## Configuration files
-
-| File | Purpose |
-|------|---------|
-| `.env.development` | Vite dev — direct localhost ports |
-| `.env.apigee` | Apigee demo build |
-| `.env.example` | Template |
-
----
-
-## Further reading
-
-| Topic | Link |
-|-------|------|
-| New device setup | [NEW_DEVICE_SETUP.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) |
-| DevOps | [DEVOPS.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/devops/DEVOPS.md) |
-| Admin features | [ADMIN_JOURNEY_COVERAGE.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/ADMIN_JOURNEY_COVERAGE.md) |
-| Push notifications | [PUSH_FIREBASE_SETUP.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/PUSH_FIREBASE_SETUP.md) |
+*Orange — my boss app*
