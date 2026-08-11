@@ -1,13 +1,20 @@
 # myboss-admin
 
-React admin portal (Vite 6, React 19).
+React admin portal.
 
-**Install & run:** [INSTALL.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/INSTALL.md)
+**Install:** [INSTALL.md](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/INSTALL.md)
 
-| Mode | Command | Local URL |
-|------|---------|-----------|
-| Docker | `../myboss-platform/scripts/deploy-demo-server.sh 127.0.0.1` | http://127.0.0.1:8081/login |
-| Vite dev | `npm install && npm run dev` | http://127.0.0.1:5173 |
+| Mode | Local URL |
+|------|-----------|
+| Docker | http://127.0.0.1:8081/login |
+| Vite dev | http://127.0.0.1:5173 |
+
+| Component | Version |
+|-----------|---------|
+| Node.js | 20 LTS |
+| TypeScript | 5.9.3 |
+| React | 19 |
+| Vite | 6 |
 
 **Login:** `admin@orange.com` / `admin123`
 
