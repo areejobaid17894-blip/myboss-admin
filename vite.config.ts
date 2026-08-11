@@ -17,6 +17,7 @@ export default defineConfig({
       VITE_USER_API_URL: 'http://localhost:3002/api/v1',
       VITE_CONFIG_API_URL: 'http://localhost:3003/api/v1',
       VITE_SURVEY_API_URL: 'http://localhost:3005/api/v1',
+      VITE_SQUAD_API_URL: 'http://localhost:3004/api/v1',
       VITE_APP_ENV: 'development',
     },
   },

@@ -5,6 +5,9 @@ coverage/
 .env.*
 !.env.example
 !.env.local-demo
+!.env.apigee
+!.env.apigee.example
+!.env.production.example
 **/tsconfig.tsbuildinfo
 .idea/
 .vscode/

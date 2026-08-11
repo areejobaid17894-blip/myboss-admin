@@ -2,7 +2,9 @@
 
 React 19 admin portal for squad management, surveys, notifications, and configuration — V2 black sidebar layout, Vite 6 dev server.
 
-Talks to the backend through gateway-relative paths (`/auth/api/v1`, `/user/api/v1`, …) in demo mode, or direct service ports during local Vite development.
+Talks to the backend through **Orange Apigee** in deployed builds (`https://api-demo.orange.com`). Local Vite dev uses direct service ports; legacy nginx `:8090` is optional for local integration only.
+
+**Apigee URLs:** [`APIGEE_CLIENT_URLS.md`](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/deployment/APIGEE_CLIENT_URLS.md)
 
 Full stack setup: [New device setup guide](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/docs/NEW_DEVICE_SETUP.md) (**myboss-platform** repo)
 
@@ -59,9 +61,21 @@ Default `.env.development` points at direct service ports (`localhost:3001`–`3
 
 ---
 
-## Demo / team testing via gateway
+## Demo / team testing via Apigee (recommended)
 
-For the same experience testers see — everything on port 8090:
+Build admin for the shared Apigee demo gateway:
+
+```bash
+cd myboss-admin
+npm run build:apigee
+# Uses .env.apigee → https://api-demo.orange.com
+```
+
+Deploy `dist/` to your admin host (CDN or static server). API calls go directly to Apigee.
+
+## Legacy local demo (nginx :8090)
+
+For same-machine integration testing only:
 
 ```bash
 cd ../myboss-platform
@@ -69,9 +83,7 @@ cd ../myboss-platform
 ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
-Admin: http://127.0.0.1:8090/login
-
-Prefer the gateway over raw :8081 — the admin build uses relative API paths that match production Apigee routing.
+Admin: http://127.0.0.1:8090/login — or `npm run build:local-demo` for relative gateway paths.
 
 ---
 
@@ -79,8 +91,9 @@ Prefer the gateway over raw :8081 — the admin build uses relative API paths th
 
 | File | Purpose | Setup |
 |------|---------|-------|
+| `.env.apigee` | **Apigee demo build** | Committed — `npm run build:apigee` |
 | `.env.development` | Vite dev server | `cp .env.example .env.development` |
-| `.env.local-demo` | Gateway-relative URLs | Copy from `.env.example` (commented block) |
+| `.env.local-demo` | Legacy nginx gateway | Relative `/auth/api/v1` paths |
 | `.env.demo`, `.env.docker` | Custom demo builds | As needed |
 | `node_modules/` | Dependencies | `npm install` |
 | `dist/` | Production build output | `npm run build` |
@@ -122,7 +135,8 @@ Output goes to `dist/`.
 | Command | Use case |
 |---------|----------|
 | `npm run dev` | Local Vite dev (:5173) |
-| `npm run build:local-demo` | Gateway :8090 / Cloudflare tunnel |
+| `npm run build:apigee` | **Apigee demo** (`https://api-demo.orange.com`) |
+| `npm run build:local-demo` | Legacy nginx :8090 / relative paths |
 | `npm run build:demo` | Direct LAN ports on demo server |
 | `npm run build:production` | Production CDN deploy |
 | `npm test` | Vitest unit tests |

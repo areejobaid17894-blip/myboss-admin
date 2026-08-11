@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:demo": "tsc -b && vite build --mode demo",
     "build:local-demo": "tsc -b && vite build --mode local-demo",
+    "build:apigee": "tsc -b && vite build --mode apigee",
     "build:uat": "tsc -b && vite build --mode uat",
     "build:production": "tsc -b && vite build --mode production",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
