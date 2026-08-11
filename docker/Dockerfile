@@ -6,24 +6,26 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY . ./
-ARG DEMO_HOST=localhost
-ARG BUILD_MODE=production
-# local-demo: relative /auth|/user|/config|/survey paths (gateway :8090 + Cloudflare tunnel).
-# Other modes: direct service ports for LAN/mobile dev against exposed backends.
-RUN if [ "$BUILD_MODE" = "local-demo" ]; then \
-      npm run build:local-demo; \
-    else \
-      VITE_AUTH_API_URL=http://${DEMO_HOST}:3001/api/v1 \
-      VITE_USER_API_URL=http://${DEMO_HOST}:3002/api/v1 \
-      VITE_CONFIG_API_URL=http://${DEMO_HOST}:3003/api/v1 \
-      VITE_SURVEY_API_URL=http://${DEMO_HOST}:3005/api/v1 \
-      VITE_SQUAD_API_URL=http://${DEMO_HOST}:3004/api/v1 \
+COPY . .
+ARG BUILD_MODE=apigee
+# apigee: VITE_API_GATEWAY_ORIGIN from .env.apigee (Orange Apigee — no local nginx gateway).
+# demo: direct LAN service ports (local Docker without Apigee).
+RUN if [ "$BUILD_MODE" = "apigee" ]; then \
+      npm run build:apigee; \
+    elif [ "$BUILD_MODE" = "demo" ]; then \
+      DEMO_HOST="${DEMO_HOST:-localhost}"; \
+      VITE_AUTH_API_URL="http://${DEMO_HOST}:3001/api/v1" \
+      VITE_USER_API_URL="http://${DEMO_HOST}:3002/api/v1" \
+      VITE_CONFIG_API_URL="http://${DEMO_HOST}:3003/api/v1" \
+      VITE_SURVEY_API_URL="http://${DEMO_HOST}:3005/api/v1" \
+      VITE_SQUAD_API_URL="http://${DEMO_HOST}:3004/api/v1" \
       VITE_APP_ENV=demo \
+      npm run build; \
+    else \
       npm run build:${BUILD_MODE}; \
     fi
 
-# Production stage
+# Production stage — static SPA only (API calls go to Apigee or direct ports baked into the build)
 FROM nginx:alpine AS production
 
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf

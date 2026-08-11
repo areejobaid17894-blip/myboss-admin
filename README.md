@@ -63,27 +63,18 @@ Default `.env.development` points at direct service ports (`localhost:3001`–`3
 
 ## Demo / team testing via Apigee (recommended)
 
-Build admin for the shared Apigee demo gateway:
-
 ```bash
 cd myboss-admin
 npm run build:apigee
-# Uses .env.apigee → https://api-demo.orange.com
+# Deploy dist/ or use Docker admin on :8081 (built with Apigee URLs)
 ```
 
-Deploy `dist/` to your admin host (CDN or static server). API calls go directly to Apigee.
-
-## Legacy local demo (nginx :8090)
-
-For same-machine integration testing only:
+## Local development (Vite)
 
 ```bash
-cd ../myboss-platform
-./scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+npm run dev
+# http://127.0.0.1:5173 — APIs on localhost:3001–3005
 ```
-
-Admin: http://127.0.0.1:8090/login — or `npm run build:local-demo` for relative gateway paths.
 
 ---
 
@@ -91,9 +82,8 @@ Admin: http://127.0.0.1:8090/login — or `npm run build:local-demo` for relativ
 
 | File | Purpose | Setup |
 |------|---------|-------|
-| `.env.apigee` | **Apigee demo build** | Committed — `npm run build:apigee` |
+| `.env.apigee` | **Apigee demo build** | `npm run build:apigee` |
 | `.env.development` | Vite dev server | `cp .env.example .env.development` |
-| `.env.local-demo` | Legacy nginx gateway | Relative `/auth/api/v1` paths |
 | `.env.demo`, `.env.docker` | Custom demo builds | As needed |
 | `node_modules/` | Dependencies | `npm install` |
 | `dist/` | Production build output | `npm run build` |
@@ -136,7 +126,7 @@ Output goes to `dist/`.
 |---------|----------|
 | `npm run dev` | Local Vite dev (:5173) |
 | `npm run build:apigee` | **Apigee demo** (`https://api-demo.orange.com`) |
-| `npm run build:local-demo` | Legacy nginx :8090 / relative paths |
+| `npm run build:demo` | Direct LAN service ports (local Docker) |
 | `npm run build:demo` | Direct LAN ports on demo server |
 | `npm run build:production` | Production CDN deploy |
 | `npm test` | Vitest unit tests |
