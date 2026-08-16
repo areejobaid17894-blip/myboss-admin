@@ -7,6 +7,7 @@ import { StatisticsPage } from '@/pages/StatisticsPage';
 import { SquadsPage } from '@/pages/SquadsPage';
 import { DestinationsPage } from '@/pages/DestinationsPage';
 import { UnregisteredPage } from '@/pages/UnregisteredPage';
+import { InvitationsPage } from '@/pages/InvitationsPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { ExtractionPage } from '@/pages/ExtractionPage';
 import { PhotosPage } from '@/pages/PhotosPage';
@@ -40,6 +41,7 @@ export function AppRouter() {
           <Route path="squads" element={<SquadsPage />} />
           <Route path="destinations" element={<DestinationsPage />} />
           <Route path="unregistered" element={<UnregisteredPage />} />
+          <Route path="invitations" element={<InvitationsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="extraction" element={<ExtractionPage />} />
           <Route path="surveys" element={<SurveysPage />} />

@@ -1,15 +1,24 @@
 import { useMemo, useState } from 'react';
+import {
+  EmployeeSettingsCard,
+  SQUAD_SETTINGS_FIELDS,
+} from '@/components/admin/EmployeeSettingsCard';
+import { SquadJoinDeadlineCard } from '@/components/admin/SquadJoinDeadlineCard';
+import { SquadManageModal } from '@/components/admin/SquadManageModal';
 import { useAdminData } from '@/hooks/useAdminData';
 import { downloadCsv } from '@/lib/csvExport';
 import { useI18n } from '@/i18n';
+import type { Squad } from '@/api/squad.service';
 
 type ViewMode = 'squads' | 'employees';
 
 export function SquadsPage() {
   const { t } = useI18n();
-  const { loading, error, squads, members, reload } = useAdminData();
+  const { loading, error, squads, members, settings, reload } = useAdminData();
   const [view, setView] = useState<ViewMode>('squads');
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const maxMembers = settings?.maxUsersPerSquad ?? 5;
 
   const filteredSquads = useMemo(() => {
     const q = search.toLowerCase();
@@ -76,7 +85,15 @@ export function SquadsPage() {
   }
 
   return (
-    <div className="ac-card">
+    <div className="ac-grid" style={{ gap: 16 }}>
+      <EmployeeSettingsCard
+        titleKey="configSectionSquad"
+        descKey="configSectionSquadDesc"
+        fields={SQUAD_SETTINGS_FIELDS}
+        onSaved={() => reload()}
+      />
+      <SquadJoinDeadlineCard />
+      <div className="ac-card">
       <h2>{t('squadsFullTitle')}</h2>
       <p className="ac-sub">{t('squadsFullSub')}</p>
       <div className="ac-toolbar">
@@ -119,6 +136,7 @@ export function SquadsPage() {
                 <th>{t('destination')}</th>
                 <th>{t('travelWilling')}</th>
                 <th>{t('travelStatus')}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -129,10 +147,12 @@ export function SquadsPage() {
                     <div style={{ fontSize: '0.72rem', color: 'var(--ac-gray-mid)' }}>{s.squadCode}</div>
                   </td>
                   <td>
-                    <b>{s.members.length}/5</b>
-                    {s.members.length < 5 && (
+                    <b>
+                      {s.members.length}/{maxMembers}
+                    </b>
+                    {s.members.length < maxMembers && (
                       <span className="ac-badge ac-b-yellow" style={{ marginInlineStart: 6 }}>
-                        {5 - s.members.length} {t('open')}
+                        {(s.remainingSeats ?? maxMembers - s.members.length)} {t('open')}
                       </span>
                     )}
                   </td>
@@ -151,6 +171,15 @@ export function SquadsPage() {
                     ) : (
                       <span className="ac-badge ac-b-gray">{t('baseOnly')}</span>
                     )}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="ac-btn ac-btn-outline ac-btn-sm"
+                      onClick={() => setEditingId(s.id)}
+                    >
+                      {t('manageSquad')}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -209,5 +238,49 @@ export function SquadsPage() {
       )}
       <p className="ac-hint">{t('squadsTravelHint')}</p>
     </div>
+    {editingId && squads.some((s) => s.id === editingId) && (
+      <SquadManageModal
+        squad={toManageSquad(squads.find((s) => s.id === editingId)!, maxMembers)}
+        maxMembers={maxMembers}
+        onClose={() => setEditingId(null)}
+        onChanged={reload}
+      />
+    )}
+    </div>
   );
+}
+
+function toManageSquad(
+  s: {
+    id: string;
+    squadCode: string;
+    name: string;
+    badge: string;
+    base: string;
+    leaderId: string;
+    members: Squad['members'];
+    destinationValidated: boolean;
+    surveyTarget: number;
+    createdAt: string;
+    remainingSeats?: number;
+    maxMembers?: number;
+    joinRequests?: Squad['joinRequests'];
+  },
+  maxMembers: number,
+): Squad {
+  return {
+    id: s.id,
+    squadCode: s.squadCode,
+    name: s.name,
+    badge: s.badge,
+    governorate: s.base,
+    leaderId: s.leaderId,
+    members: s.members,
+    destinationValidated: s.destinationValidated,
+    surveyTarget: s.surveyTarget,
+    createdAt: s.createdAt,
+    remainingSeats: s.remainingSeats,
+    maxMembers: s.maxMembers ?? maxMembers,
+    joinRequests: s.joinRequests,
+  };
 }

@@ -62,7 +62,7 @@ export function loadAuditLog(): AuditRecord[] {
   return readJson(AUDIT_KEY, [
     {
       time: 'Today 9:14 AM',
-      action: 'AI engine generated initial destination assignments for demo squads.',
+      action: 'Initial destination suggestions generated for demo squads.',
     },
   ]);
 }

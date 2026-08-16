@@ -9,6 +9,8 @@ export interface EmployeeSettings {
   galleryUploadLimit: number;
   vestSizeEditWindowStart: string;
   vestSizeEditWindowEnd: string;
+  squadJoinDeadline: string;
+  adminContactEmail: string;
 }
 
 export const configService = {

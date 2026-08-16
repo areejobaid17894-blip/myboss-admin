@@ -17,7 +17,7 @@ export function DestinationsPage() {
 
   const setDest = (squadId: string, value: string, squad: (typeof squads)[0]) => {
     const [destGov, dest] = value.split('|');
-    const modified = !(destGov === squad.aiDestGov && dest === squad.aiDest);
+    const modified = !(destGov === squad.suggestedDestGov && dest === squad.suggestedDest);
     const next = { ...overrides, [squadId]: { destGov, dest, modified } };
     setOverrides(next);
     saveDestinationOverrides(next);
@@ -40,7 +40,7 @@ export function DestinationsPage() {
   const resetDest = () => {
     saveDestinationOverrides({});
     setOverrides({});
-    logAction('Reset all destinations to AI assignment.');
+    logAction('Reset all destinations to suggested assignment.');
     showToast(t('destReset'));
     reload();
   };
@@ -49,7 +49,16 @@ export function DestinationsPage() {
     downloadCsv(
       'squad_destinations.csv',
       [
-        ['Squad ID', 'Squad', 'Base', 'AI area', 'AI governorate', 'Assigned area', 'Assigned governorate', 'Source'],
+        [
+          'Squad ID',
+          'Squad',
+          'Base',
+          'Suggested area',
+          'Suggested governorate',
+          'Assigned area',
+          'Assigned governorate',
+          'Source',
+        ],
         ...squads.map((s) => {
           const o = overrides[s.id];
           const destGov = o?.destGov ?? s.destGov;
@@ -59,11 +68,11 @@ export function DestinationsPage() {
             s.squadCode,
             s.name,
             s.base,
-            s.aiDest,
-            s.aiDestGov,
+            s.suggestedDest,
+            s.suggestedDestGov,
             dest,
             destGov,
-            modified ? 'Admin override' : 'AI',
+            modified ? 'Admin override' : 'Suggested',
           ];
         }),
       ],
@@ -86,7 +95,7 @@ export function DestinationsPage() {
       <h2>{t('destTitle')}</h2>
       <p className="ac-sub">{t('destSub')}</p>
       <div className="ac-ai-note">
-        ✦ <span>{t('destAiNote')}</span>
+        <span>{t('destAiNote')}</span>
       </div>
       <div className="ac-toolbar">
         <button type="button" className="ac-btn ac-btn-orange" onClick={applyDest}>
@@ -137,9 +146,9 @@ export function DestinationsPage() {
                     )}
                   </td>
                   <td>
-                    <span className="ac-badge ac-b-purple">✦ {s.aiDest}</span>
+                    <span className="ac-badge ac-b-purple">✦ {s.suggestedDest}</span>
                     <div style={{ fontSize: '0.7rem', color: 'var(--ac-gray-mid)', marginTop: 3 }}>
-                      {s.aiDestGov}
+                      {s.suggestedDestGov}
                     </div>
                   </td>
                   <td>
@@ -163,7 +172,7 @@ export function DestinationsPage() {
                     {modified ? (
                       <span className="ac-badge ac-b-orange">{t('adminOverride')}</span>
                     ) : (
-                      <span className="ac-badge ac-b-purple">AI</span>
+                      <span className="ac-badge ac-b-purple">{t('suggested')}</span>
                     )}
                   </td>
                 </tr>

@@ -15,34 +15,51 @@ function requireEnv(key: string): string {
   return value as string;
 }
 
-function fromGatewayOrigin(gatewayOrigin: string, appEnv: AppEnvironment): EnvConfig {
-  const base = gatewayOrigin.replace(/\/$/, '');
+function alignApiUrlToPageHost(apiUrl: string, appEnv: AppEnvironment): string {
+  if (typeof window === 'undefined') return apiUrl;
+  if (appEnv !== 'development' && appEnv !== 'demo') return apiUrl;
+  try {
+    const parsed = new URL(apiUrl);
+    const pageHost = window.location.hostname;
+    if (parsed.hostname !== pageHost) {
+      parsed.hostname = pageHost;
+    }
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return apiUrl;
+  }
+}
+
+function fromSingleOrigin(origin: string, appEnv: AppEnvironment): EnvConfig {
+  const base = origin.replace(/\/$/, '');
+  const apiUrl = alignApiUrlToPageHost(
+    base.endsWith('/api/v1') ? base : `${base}/api/v1`,
+    appEnv,
+  );
   return {
-    authApiUrl: `${base}/auth/api/v1`,
-    userApiUrl: `${base}/user/api/v1`,
-    configApiUrl: `${base}/config/api/v1`,
-    surveyApiUrl: `${base}/survey/api/v1`,
-    squadApiUrl: `${base}/squad/api/v1`,
+    authApiUrl: apiUrl,
+    userApiUrl: apiUrl,
+    configApiUrl: apiUrl,
+    surveyApiUrl: apiUrl,
+    squadApiUrl: apiUrl,
     appEnv,
   };
 }
 
 function loadEnvConfig(): EnvConfig {
   const gatewayOrigin = import.meta.env.VITE_API_GATEWAY_ORIGIN as string | undefined;
+  const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
   const appEnv = (import.meta.env.VITE_APP_ENV as AppEnvironment) || 'development';
 
   if (gatewayOrigin?.trim()) {
-    return fromGatewayOrigin(gatewayOrigin.trim(), appEnv);
+    return fromSingleOrigin(gatewayOrigin.trim(), appEnv);
+  }
+  if (apiUrl?.trim()) {
+    return fromSingleOrigin(apiUrl.trim(), appEnv);
   }
 
-  return {
-    authApiUrl: requireEnv('VITE_AUTH_API_URL'),
-    userApiUrl: requireEnv('VITE_USER_API_URL'),
-    configApiUrl: requireEnv('VITE_CONFIG_API_URL'),
-    surveyApiUrl: requireEnv('VITE_SURVEY_API_URL'),
-    squadApiUrl: requireEnv('VITE_SQUAD_API_URL'),
-    appEnv,
-  };
+  const fallback = requireEnv('VITE_AUTH_API_URL');
+  return fromSingleOrigin(fallback, appEnv);
 }
 
 export const env: EnvConfig = loadEnvConfig();

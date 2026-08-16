@@ -3,9 +3,10 @@ import { configService, type EmployeeSettings } from '@/api/config.service';
 import { galleryService, type GalleryItem } from '@/api/gallery.service';
 import { squadService, type Squad, type SquadStats } from '@/api/squad.service';
 import { surveyService, type CompanyReport } from '@/api/survey.service';
-import { userService, type User } from '@/api/user.service';
-import { pickAiDestination } from '@/lib/adminGeo';
+import { fetchAllUsers, type User } from '@/api/user.service';
+import { pickSuggestedDestination } from '@/lib/adminGeo';
 import { loadDestinationOverrides, type DestinationOverride } from '@/lib/adminStores';
+import { useI18n } from '@/i18n';
 
 export interface EnrichedMember {
   userId: string;
@@ -31,14 +32,22 @@ export interface EnrichedSquad {
   members: Squad['members'];
   travelWilling: number;
   travelEligible: boolean;
-  aiDestGov: string;
-  aiDest: string;
+  suggestedDestGov: string;
+  suggestedDest: string;
   destGov: string;
   dest: string;
   destModified: boolean;
   surveys: number;
   target: number;
   leaderName: string;
+  remainingSeats?: number;
+  maxMembers?: number;
+  joinRequests?: Squad['joinRequests'];
+  leaderId: string;
+  badge: string;
+  destinationValidated: boolean;
+  surveyTarget: number;
+  createdAt: string;
 }
 
 function hashSeed(input: string): number {
@@ -49,21 +58,27 @@ function hashSeed(input: string): number {
 
 function enrichSquads(
   squads: Squad[],
+  users: User[],
   overrides: Record<string, DestinationOverride>,
   surveyTarget: number,
   totalResponses: number,
 ): EnrichedSquad[] {
   const perSquad = squads.length ? Math.max(1, Math.floor(totalResponses / squads.length)) : 0;
+  const userMap = new Map(users.map((u) => [u.id, u]));
 
   return squads.map((s, idx) => {
     const members = s.members ?? [];
-    const travelWilling = members.filter((m) => m.openToTravel).length;
+    const travelWilling = members.filter((m) => {
+      const user = userMap.get(m.userId);
+      // User profile is source of truth for travel willingness.
+      return Boolean(user?.openToTravel ?? m.openToTravel);
+    }).length;
     const travelEligible = travelWilling >= 3;
-    const ai = pickAiDestination(s.governorate, travelEligible, hashSeed(s.id));
+    const suggested = pickSuggestedDestination(s.governorate, travelEligible, hashSeed(s.id));
     const stored = overrides[s.id];
     const persisted = s.destination?.split('|');
-    const destGov = stored?.destGov ?? persisted?.[0] ?? ai.destGov;
-    const dest = stored?.dest ?? persisted?.[1] ?? ai.dest;
+    const destGov = stored?.destGov ?? persisted?.[0] ?? suggested.destGov;
+    const dest = stored?.dest ?? persisted?.[1] ?? suggested.dest;
     const destModified = stored?.modified ?? Boolean(s.destinationValidated && persisted?.length === 2);
     const leader = members.find((m) => m.role === 'leader') ?? members[0];
 
@@ -75,14 +90,22 @@ function enrichSquads(
       members,
       travelWilling,
       travelEligible,
-      aiDestGov: ai.destGov,
-      aiDest: ai.dest,
+      suggestedDestGov: suggested.destGov,
+      suggestedDest: suggested.dest,
       destGov,
       dest,
       destModified,
       surveys: perSquad + (idx % 7),
       target: s.surveyTarget || surveyTarget,
       leaderName: leader ? `${leader.firstName} ${leader.lastName}` : '—',
+      remainingSeats: s.remainingSeats,
+      maxMembers: s.maxMembers,
+      joinRequests: s.joinRequests,
+      leaderId: s.leaderId,
+      badge: s.badge,
+      destinationValidated: s.destinationValidated,
+      surveyTarget: s.surveyTarget,
+      createdAt: s.createdAt,
     };
   });
 }
@@ -107,7 +130,7 @@ function buildMembers(
         dest: s.dest,
         destGov: s.destGov,
         vest: user?.vestSize ?? '—',
-        travel: Boolean(m.openToTravel ?? user?.openToTravel),
+        travel: Boolean(user?.openToTravel ?? m.openToTravel),
         department: user?.buildingName?.split(',')[0] ?? '—',
         email: user?.email ?? '—',
       };
@@ -115,7 +138,12 @@ function buildMembers(
   );
 }
 
+function settledValue<T>(result: PromiseSettledResult<T>, fallback: T): T {
+  return result.status === 'fulfilled' ? result.value : fallback;
+}
+
 export function useAdminData() {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState<SquadStats | null>(null);
@@ -130,28 +158,39 @@ export function useAdminData() {
     setLoading(true);
     setError('');
     try {
-      const [statsRes, squadsRes, usersRes, reportRes, galleryRes, settingsRes] = await Promise.all([
+      const [statsRes, squadsRes, usersRes, reportRes, galleryRes, settingsRes] = await Promise.allSettled([
         squadService.getStats(),
         squadService.listAdmin(),
-        userService.getAll(1, 100, { role: 'employee' }),
-        surveyService.getCompanyReport().catch(() => null),
-        galleryService.list(undefined, 'employee').catch(() => [] as GalleryItem[]),
-        configService.getEmployeeSettings().catch(() => null),
+        fetchAllUsers({ role: 'employee' }),
+        surveyService.getCompanyReport(),
+        galleryService.list(undefined, 'employee'),
+        configService.getEmployeeSettings(),
       ]);
-      setStats(statsRes);
-      setSquadsRaw(Array.isArray(squadsRes) ? squadsRes : []);
-      setUsers(usersRes.data?.items ?? []);
-      setReport(reportRes);
-      setGallery(galleryRes);
-      setSettings(settingsRes?.data ?? null);
+
+      setStats(settledValue(statsRes, null));
+      setSquadsRaw(settledValue(squadsRes, [] as Squad[]));
+      setUsers(settledValue(usersRes, [] as User[]));
+      setReport(settledValue(reportRes, null));
+      setGallery(settledValue(galleryRes, [] as GalleryItem[]));
+      setSettings(settledValue(settingsRes, null)?.data ?? null);
       setDestOverrides(loadDestinationOverrides());
+
+      if (statsRes.status === 'rejected' && squadsRes.status === 'rejected') {
+        console.error('Admin data load failed', statsRes.reason, squadsRes.reason, usersRes);
+        setError(t('adminDataLoadFailed'));
+      } else if (squadsRes.status === 'rejected') {
+        console.error('Admin squads load failed', squadsRes.reason);
+        setError(t('adminDataLoadFailed'));
+      } else if (usersRes.status === 'rejected') {
+        console.error('Admin users load failed', usersRes.reason);
+      }
     } catch (err) {
       console.error('Admin data load failed', err);
-      setError('Failed to load admin data. Sign in again or use http://127.0.0.1:8090/login (not :8081).');
+      setError(t('adminDataLoadFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     reload();
@@ -161,8 +200,8 @@ export function useAdminData() {
   const totalResponses = report?.totalResponses ?? 0;
 
   const squads = useMemo(
-    () => enrichSquads(squadsRaw, destOverrides, surveyTarget, totalResponses),
-    [squadsRaw, destOverrides, surveyTarget, totalResponses],
+    () => enrichSquads(squadsRaw, users, destOverrides, surveyTarget, totalResponses),
+    [squadsRaw, users, destOverrides, surveyTarget, totalResponses],
   );
 
   const members = useMemo(() => buildMembers(squads, users), [squads, users]);

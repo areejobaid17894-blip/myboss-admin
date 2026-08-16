@@ -32,7 +32,7 @@ export const AREAS_BY_GOV: Record<string, string[]> = {
 
 export const VEST_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
 
-export function pickAiDestination(baseGov: string, travelEligible: boolean, seed: number) {
+export function pickSuggestedDestination(baseGov: string, travelEligible: boolean, seed: number) {
   const areas = AREAS_BY_GOV[baseGov] ?? AREAS_BY_GOV.Amman;
   let destGov = baseGov;
   if (travelEligible && seed % 2 === 0) {
@@ -43,3 +43,6 @@ export function pickAiDestination(baseGov: string, travelEligible: boolean, seed
   const dest = destAreas[seed % destAreas.length];
   return { destGov, dest };
 }
+
+/** @deprecated Use pickSuggestedDestination */
+export const pickAiDestination = pickSuggestedDestination;

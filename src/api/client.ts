@@ -32,7 +32,9 @@ function createApiClient(baseURL: string): AxiosInstance {
   const client = axios.create({
     baseURL,
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    timeout: 30_000,
+    timeout: 60_000,
+    maxBodyLength: 8 * 1024 * 1024,
+    maxContentLength: 8 * 1024 * 1024,
   });
 
   client.interceptors.request.use((config: InternalAxiosRequestConfig) => {

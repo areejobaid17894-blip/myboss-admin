@@ -1,4 +1,8 @@
 import { useMemo, useState } from 'react';
+import {
+  EmployeeSettingsCard,
+  GALLERY_SETTINGS_FIELDS,
+} from '@/components/admin/EmployeeSettingsCard';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useToast } from '@/hooks/useToast';
@@ -68,7 +72,14 @@ export function PhotosPage() {
   }
 
   return (
-    <div className="ac-card">
+    <div className="ac-grid" style={{ gap: 16 }}>
+      <EmployeeSettingsCard
+        titleKey="configSectionGallery"
+        descKey="configSectionGalleryDesc"
+        fields={GALLERY_SETTINGS_FIELDS}
+        onSaved={() => reload()}
+      />
+      <div className="ac-card">
       <h2>{t('photosTitle')}</h2>
       <p className="ac-sub">{t('photosSub')} Employee uploads appear here for extraction.</p>
       <div className="ac-toolbar">
@@ -132,6 +143,7 @@ export function PhotosPage() {
         </div>
       )}
       <p className="ac-hint">{t('photosHint')}</p>
+    </div>
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 import { AddEmployeeCard } from '@/components/admin/AddEmployeeCard';
+import {
+  EmployeeSettingsCard,
+  PROFILE_SETTINGS_FIELDS,
+} from '@/components/admin/EmployeeSettingsCard';
 import { UserListFiltersBar } from '@/components/admin/UserListFilters';
 import { useUserList } from '@/hooks/useUserList';
 import { downloadCsv } from '@/lib/csvExport';
@@ -59,7 +63,12 @@ export function UsersPage() {
 
   return (
     <>
-      <div className="ac-grid ac-g2" style={{ marginBottom: 20 }}>
+      <EmployeeSettingsCard
+        titleKey="configSectionProfile"
+        descKey="configSectionProfileDesc"
+        fields={PROFILE_SETTINGS_FIELDS}
+      />
+      <div className="ac-grid ac-g2" style={{ marginBottom: 20, marginTop: 16 }}>
         <AddEmployeeCard onCreated={reload} />
         <div className="ac-card" style={{ marginBottom: 0 }}>
           <h2>{t('usersListTitle')}</h2>

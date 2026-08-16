@@ -12,6 +12,7 @@ import styles from './LoginPage.module.css';
 type LoginStep = 'credentials' | 'otp';
 
 const isDemoBuild = env.appEnv === 'demo';
+const prefillCredentials = env.appEnv !== 'production';
 
 function parseAdminSignInResponse(data: unknown) {
   if (!data || typeof data !== 'object') return null;
@@ -29,8 +30,8 @@ export function LoginPage() {
   const { login } = useAuth();
   const { t, toggleLocale, locale, dir } = useI18n();
   const [step, setStep] = useState<LoginStep>('credentials');
-  const [email, setEmail] = useState(isDemoBuild ? DEMO_ADMIN_EMAIL : '');
-  const [password, setPassword] = useState(isDemoBuild ? DEMO_ADMIN_PASSWORD : '');
+  const [email, setEmail] = useState(prefillCredentials ? DEMO_ADMIN_EMAIL : '');
+  const [password, setPassword] = useState(prefillCredentials ? DEMO_ADMIN_PASSWORD : '');
   const [sessionId, setSessionId] = useState('');
   const [otp, setOtp] = useState('');
   const [demoOtpCode, setDemoOtpCode] = useState<string | undefined>();
@@ -76,7 +77,7 @@ export function LoginPage() {
 
       setError(t('errorGeneric'));
     } catch (err) {
-      setError(getApiErrorMessage(err, t));
+      setError(getApiErrorMessage(err, t, 'credentials'));
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,7 @@ export function LoginPage() {
         login(data.accessToken, data.refreshToken);
         navigate('/', { replace: true });
       } catch (err) {
-        setError(getApiErrorMessage(err, t));
+        setError(getApiErrorMessage(err, t, 'otp'));
         setOtp('');
       } finally {
         setLoading(false);
@@ -120,7 +121,7 @@ export function LoginPage() {
       setDemoOtpCode(isDemoBuild ? data.demoOtpCode : undefined);
       setOtp('');
     } catch (err) {
-      setError(getApiErrorMessage(err, t));
+      setError(getApiErrorMessage(err, t, 'otp'));
     } finally {
       setLoading(false);
     }

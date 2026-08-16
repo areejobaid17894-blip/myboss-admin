@@ -1,3 +1,4 @@
+# Test + artifact. Production image is built by DevOps CI/CD from docker/Dockerfile.
 stages:
   - test
   - build
@@ -19,7 +20,7 @@ build:
   image: node:${NODE_VERSION}-alpine
   script:
     - npm ci
-    - npm run build:local-demo
+    - npm run build
   artifacts:
     paths: [dist/]
     expire_in: 1 week

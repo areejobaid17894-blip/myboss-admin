@@ -91,12 +91,36 @@ export function SurveySchemaEditor() {
 
   const save = async () => {
     if (!selected) return;
+    if (!selected.title.trim()) {
+      setError(t('surveyTitleRequired'));
+      return;
+    }
+    const missingTitle = selected.questions.findIndex((q) => !q.title.trim());
+    if (missingTitle >= 0) {
+      setError(`${t('surveyQuestionTitleRequired')} (Q${missingTitle + 1})`);
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
+      const questions = selected.questions.map((q, i) => ({
+        id: q.id,
+        order: i + 1,
+        type: q.type,
+        title: q.title.trim(),
+        description: q.description?.trim() || undefined,
+        required: q.required,
+        options: q.options,
+        validation: q.validation,
+        section: q.section,
+      }));
       const payload = {
-        ...selected,
-        questions: selected.questions.map((q, i) => ({ ...q, order: i + 1 })),
+        segment: selected.segment,
+        title: selected.title.trim(),
+        description: selected.description?.trim() || undefined,
+        isActive: selected.isActive,
+        questions,
       };
       if (selected.id) await surveyService.update(selected.id, payload);
       else await surveyService.create(payload);
@@ -118,9 +142,15 @@ export function SurveySchemaEditor() {
 
   const updateQuestion = (index: number, patch: Partial<SurveyQuestion>) => {
     if (!selected) return;
+    const nextPatch = { ...patch };
+    if (patch.type) {
+      const isConsent =
+        patch.type.startsWith('consent_') || patch.type === 'signature';
+      nextPatch.section = isConsent ? 'consent' : 'feedback';
+    }
     setSelected({
       ...selected,
-      questions: selected.questions.map((q, i) => (i === index ? { ...q, ...patch } : q)),
+      questions: selected.questions.map((q, i) => (i === index ? { ...q, ...nextPatch } : q)),
     });
   };
 

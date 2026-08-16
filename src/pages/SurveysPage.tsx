@@ -1,4 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
+import {
+  EmployeeSettingsCard,
+  SURVEY_SETTINGS_FIELDS,
+} from '@/components/admin/EmployeeSettingsCard';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useToast } from '@/hooks/useToast';
@@ -69,6 +73,12 @@ export function SurveysPage() {
 
   return (
     <>
+      <EmployeeSettingsCard
+        titleKey="configSectionSurvey"
+        descKey="configSectionSurveyDesc"
+        fields={SURVEY_SETTINGS_FIELDS}
+        onSaved={() => reload()}
+      />
       <div className="ac-grid ac-g2">
         <div className="ac-card">
           <h2>{t('surveysUploadCustomerTitle')}</h2>

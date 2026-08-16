@@ -45,7 +45,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('admin_locale', next);
       setLocale(next);
     },
-    t: (key) => messages[locale][key],
+    t: (key) => messages[locale][key] ?? en[key] ?? String(key),
     dir: locale === 'ar' ? 'rtl' : 'ltr',
   }), [locale]);
 

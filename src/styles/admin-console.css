@@ -266,6 +266,7 @@
 .ac-field input[type='email'],
 .ac-field input[type='number'],
 .ac-field input[type='date'],
+.ac-field input[type='url'],
 .ac-field select,
 .ac-field textarea {
   width: 100%;
@@ -676,6 +677,53 @@
   margin-top: 8px;
 }
 
+.ac-error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+}
+
+.ac-field-error {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.ac-field-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 6px;
+}
+
+.ac-char-count {
+  font-size: 0.72rem;
+  color: var(--ac-gray-mid);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.ac-field.is-invalid .ac-input,
+.ac-field.is-invalid input,
+.ac-field.is-invalid textarea {
+  border-color: #dc2626;
+}
+
+.ac-field.is-invalid input:focus,
+.ac-field.is-invalid textarea:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.ac-required {
+  color: #dc2626;
+}
+
 .ac-ai-note {
   display: flex;
   gap: 10px;
@@ -704,7 +752,31 @@
   margin: 6px 0 12px;
 }
 
-.ac-error {
+.ac-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 80;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow: auto;
+}
+
+.ac-modal {
+  background: #fff;
+  border-radius: 14px;
+  max-width: 640px;
+  width: 100%;
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.ac-btn-danger {
+  background: #c0392b;
+  color: #fff;
+}
   background: #fef2f2;
   color: #dc2626;
   padding: 12px 16px;

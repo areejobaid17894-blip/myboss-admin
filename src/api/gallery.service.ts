@@ -29,5 +29,5 @@ export const galleryService = {
           ...(source ? { source } : {}),
         },
       })
-      .then((r) => r.data.items ?? []),
+      .then((r) => r.data?.items ?? []),
 };

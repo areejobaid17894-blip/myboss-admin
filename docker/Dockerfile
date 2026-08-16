@@ -1,4 +1,6 @@
-# Build stage
+# Build + serve admin SPA using only node:20-alpine (same base as backend).
+
+# ── Build ────────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -9,32 +11,41 @@ RUN npm ci
 COPY . .
 ARG BUILD_MODE=demo
 ARG DEMO_HOST=127.0.0.1
-# apigee: VITE_API_GATEWAY_ORIGIN from .env.apigee (Orange Apigee).
-# demo: direct service ports http://DEMO_HOST:3001–3005 (no Apigee).
-RUN if [ "$BUILD_MODE" = "apigee" ]; then \
-      npm run build:apigee; \
-    elif [ "$BUILD_MODE" = "demo" ]; then \
-      DEMO_HOST="${DEMO_HOST:-localhost}"; \
-      VITE_AUTH_API_URL="http://${DEMO_HOST}:3001/api/v1" \
-      VITE_USER_API_URL="http://${DEMO_HOST}:3002/api/v1" \
-      VITE_CONFIG_API_URL="http://${DEMO_HOST}:3003/api/v1" \
-      VITE_SURVEY_API_URL="http://${DEMO_HOST}:3005/api/v1" \
-      VITE_SQUAD_API_URL="http://${DEMO_HOST}:3004/api/v1" \
-      VITE_APP_ENV=demo \
+ARG VITE_APP_ENV
+ARG VITE_API_URL
+ARG VITE_API_GATEWAY_ORIGIN
+# GitLab CI/CD Variables are passed as build args (never baked from a committed .env).
+# One backend origin: http://HOST:3001/api/v1
+RUN API_URL="${VITE_API_URL:-http://${DEMO_HOST:-localhost}:3001/api/v1}"; \
+    if [ "$BUILD_MODE" = "apigee" ] || [ -n "$VITE_API_GATEWAY_ORIGIN" ]; then \
+      VITE_API_GATEWAY_ORIGIN="${VITE_API_GATEWAY_ORIGIN}" \
+      VITE_APP_ENV="${VITE_APP_ENV:-production}" \
       npm run build; \
     else \
-      npm run build:${BUILD_MODE}; \
+      VITE_API_URL="$API_URL" \
+      VITE_AUTH_API_URL="$API_URL" \
+      VITE_USER_API_URL="$API_URL" \
+      VITE_CONFIG_API_URL="$API_URL" \
+      VITE_SURVEY_API_URL="$API_URL" \
+      VITE_SQUAD_API_URL="$API_URL" \
+      VITE_APP_ENV="${VITE_APP_ENV:-${BUILD_MODE}}" \
+      npm run build; \
     fi
 
-# Production stage — static SPA only (API calls go to Apigee or direct ports baked into the build)
-FROM nginx:alpine AS production
+# ── Run (static SPA) ─────────────────────────────────────────────────────────
+FROM node:20-alpine AS production
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=80
+
+COPY docker/spa-server.mjs ./
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+  CMD node -e "require('http').get('http://127.0.0.1:80/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "spa-server.mjs"]

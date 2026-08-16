@@ -1,4 +1,4 @@
-import { DEMO_ADMIN_ACCOUNT, DEMO_EMPLOYEE_ACCOUNTS } from '@/lib/demoTestAccounts';
+import { DEMO_ADMIN_ACCOUNTS, DEMO_EMPLOYEE_ACCOUNTS } from '@/lib/demoTestAccounts';
 import { useI18n } from '@/i18n';
 
 export function DemoTestAccountsCard() {
@@ -18,13 +18,15 @@ export function DemoTestAccountsCard() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                <code>{DEMO_ADMIN_ACCOUNT.email}</code>
-              </td>
-              <td>{DEMO_ADMIN_ACCOUNT.label}</td>
-              <td>{DEMO_ADMIN_ACCOUNT.scenario}</td>
-            </tr>
+            {DEMO_ADMIN_ACCOUNTS.map((account) => (
+              <tr key={account.email}>
+                <td>
+                  <code>{account.email}</code>
+                </td>
+                <td>{account.label}</td>
+                <td>{account.scenario}</td>
+              </tr>
+            ))}
             {DEMO_EMPLOYEE_ACCOUNTS.map((account) => (
               <tr key={account.email}>
                 <td>

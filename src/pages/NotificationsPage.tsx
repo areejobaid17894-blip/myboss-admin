@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { getApiErrorMessage } from '@/api/errors';
 import { notificationService, type NotificationAudience, type NotificationRecord } from '@/api/notification.service';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useToast } from '@/hooks/useToast';
 import { downloadCsv } from '@/lib/csvExport';
 import { useI18n } from '@/i18n';
+import type { TranslationKey } from '@/i18n/en';
 
 const AUDIENCES: NotificationAudience[] = [
   'All employees',
@@ -12,10 +14,91 @@ const AUDIENCES: NotificationAudience[] = [
   'Unregistered employees',
 ];
 
+const TITLE_MAX = 80;
+const MESSAGE_MAX = 500;
+const IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+const IMAGE_MAX_EDGE = 1280;
+const IMAGE_JPEG_QUALITY = 0.82;
+
+type FieldKey = 'title' | 'body' | 'imageUrl';
+type FieldErrors = Partial<Record<FieldKey, TranslationKey>>;
+
 function formatSentTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function isPublicHttpsImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return false;
+    const host = url.hostname.toLowerCase();
+    return host !== 'localhost' && host !== '127.0.0.1' && host !== '::1';
+  } catch {
+    return false;
+  }
+}
+
+function validateNotificationFields(input: {
+  title: string;
+  body: string;
+  imageUrl: string;
+}): FieldErrors {
+  const errors: FieldErrors = {};
+  const title = input.title.trim();
+  const body = input.body.trim();
+  const imageUrl = input.imageUrl.trim();
+
+  if (!title) errors.title = 'notifTitleRequired';
+  else if (title.length > TITLE_MAX) errors.title = 'notifTitleTooLong';
+
+  if (!body) errors.body = 'notifMessageRequired';
+  else if (body.length > MESSAGE_MAX) errors.body = 'notifMessageTooLong';
+
+  if (imageUrl && !imageUrl.startsWith('data:image') && !isPublicHttpsImageUrl(imageUrl)) {
+    errors.imageUrl = 'notifImageUrlInvalid';
+  }
+
+  return errors;
+}
+
+function firstInvalidField(errors: FieldErrors): FieldKey | null {
+  if (errors.title) return 'title';
+  if (errors.body) return 'body';
+  if (errors.imageUrl) return 'imageUrl';
+  return null;
+}
+
+async function compressImageFile(file: File): Promise<string> {
+  if (typeof createImageBitmap !== 'function') {
+    return readFileAsDataUrl(file);
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    bitmap.close();
+    return readFileAsDataUrl(file);
+  }
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function NotificationsPage() {
@@ -31,6 +114,11 @@ export function NotificationsPage() {
   const [history, setHistory] = useState<NotificationRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [sending, setSending] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState('');
+  const titleRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const imageUrlRef = useRef<HTMLInputElement>(null);
 
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -39,36 +127,62 @@ export function NotificationsPage() {
       setHistory(items);
     } catch (err) {
       console.error('Failed to load notification history', err);
-      showToast('Failed to load notification history');
+      showToast(t('notifHistoryLoadFailed'));
     } finally {
       setLoadingHistory(false);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
 
-  const handleImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Please choose an image file');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(String(reader.result ?? ''));
-      setImageFileName(file.name);
-    };
-    reader.readAsDataURL(file);
+  const focusField = (field: FieldKey) => {
+    const node = field === 'title' ? titleRef.current : field === 'body' ? bodyRef.current : imageUrlRef.current;
+    node?.focus();
   };
 
-  const send = async () => {
-    if (!title.trim() || !body.trim()) {
-      showToast(t('notifMissingFields'));
+  const applyValidation = (next = { title, body, imageUrl }) => {
+    const errors = validateNotificationFields(next);
+    setFieldErrors(errors);
+    return errors;
+  };
+
+  const handleImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setFieldErrors((prev) => ({ ...prev, imageUrl: 'notifImageTypeInvalid' }));
       return;
     }
+    if (file.size > IMAGE_MAX_BYTES) {
+      setFieldErrors((prev) => ({ ...prev, imageUrl: 'notifImageTooLarge' }));
+      return;
+    }
+
+    void compressImageFile(file)
+      .then((dataUrl) => {
+        setImageUrl(dataUrl);
+        setImageFileName(file.name);
+        setFieldErrors((prev) => ({ ...prev, imageUrl: undefined }));
+      })
+      .catch(() => {
+        setFieldErrors((prev) => ({ ...prev, imageUrl: 'notifImageTypeInvalid' }));
+      });
+  };
+
+  const send = async (event: FormEvent) => {
+    event.preventDefault();
+    setFormError('');
+    const errors = applyValidation();
+    const invalid = firstInvalidField(errors);
+    if (invalid) {
+      focusField(invalid);
+      return;
+    }
+
     setSending(true);
     try {
       await notificationService.create({
@@ -83,81 +197,198 @@ export function NotificationsPage() {
       setImageUrl('');
       setImageFileName('');
       setPreview(false);
+      setFieldErrors({});
       showToast(`${t('notifSent')} — ${audience}`);
       await loadHistory();
     } catch (err) {
       console.error('Send notification failed', err);
-      showToast('Failed to send notification');
+      setFormError(getApiErrorMessage(err, t));
     } finally {
       setSending(false);
     }
   };
+
+  const showPreview = () => {
+    const errors = applyValidation();
+    const invalid = firstInvalidField(errors);
+    if (invalid) {
+      setPreview(false);
+      focusField(invalid);
+      return;
+    }
+    setPreview(true);
+  };
+
+  const pastedImageUrl = imageUrl.startsWith('data:image') ? '' : imageUrl;
 
   return (
     <div className="ac-grid ac-g2">
       <div className="ac-card">
         <h2>{t('notifComposeTitle')}</h2>
         <p className="ac-sub">{t('notifComposeSub')}</p>
-        <div className="ac-field">
-          <label>{t('audience')}</label>
-          <div className="ac-seg">
-            {AUDIENCES.map((a) => (
-              <button
-                key={a}
-                type="button"
-                className={audience === a ? 'ac-on' : ''}
-                onClick={() => setAudience(a)}
-              >
-                {a}
-              </button>
-            ))}
+        {formError ? <div className="ac-error" role="alert">{formError}</div> : null}
+        <form onSubmit={send} noValidate>
+          <div className="ac-field">
+            <label>{t('audience')}</label>
+            <div className="ac-seg" role="group" aria-label={t('audience')}>
+              {AUDIENCES.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className={audience === a ? 'ac-on' : ''}
+                  onClick={() => setAudience(a)}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="ac-field">
-          <label>{t('notifTitle')}</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t('notifTitlePlaceholder')}
-          />
-        </div>
-        <div className="ac-field">
-          <label>{t('notifMessage')}</label>
-          <textarea
-            rows={4}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t('notifMessagePlaceholder')}
-          />
-        </div>
-        <div className="ac-field">
-          <label>Hero image (optional)</label>
-          <input type="file" accept="image/*" onChange={handleImageFile} />
-          {imageFileName ? <p className="ac-hint">Selected: {imageFileName}</p> : null}
-          <input
-            type="url"
-            value={imageUrl.startsWith('data:image') ? '' : imageUrl}
-            onChange={(e) => {
-              setImageUrl(e.target.value);
-              setImageFileName('');
-            }}
-            placeholder="Or paste a public https:// image URL"
-            style={{ marginTop: 8 }}
-          />
-          <p className="ac-hint">Upload works on all phones. Pasted URLs must be public https:// (not localhost).</p>
-        </div>
-        <button type="button" className="ac-btn ac-btn-orange" onClick={send} disabled={sending}>
-          {sending ? t('loadingData') : t('sendNotification')}
-        </button>
-        <button
-          type="button"
-          className="ac-btn ac-btn-ghost"
-          style={{ marginInlineStart: 8 }}
-          onClick={() => setPreview(true)}
-        >
-          {t('preview')}
-        </button>
+          <div className={`ac-field${fieldErrors.title ? ' is-invalid' : ''}`}>
+            <label htmlFor="notif-title">
+              {t('notifTitle')} <span className="ac-required">*</span>
+            </label>
+            <input
+              ref={titleRef}
+              id="notif-title"
+              type="text"
+              value={title}
+              maxLength={TITLE_MAX}
+              aria-invalid={Boolean(fieldErrors.title)}
+              aria-describedby={fieldErrors.title ? 'notif-title-error' : 'notif-title-count'}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (fieldErrors.title) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    title: validateNotificationFields({ title: e.target.value, body, imageUrl }).title,
+                  }));
+                }
+              }}
+              onBlur={() => {
+                if (title.length > 0 || fieldErrors.title) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    title: validateNotificationFields({ title, body, imageUrl }).title,
+                  }));
+                }
+              }}
+              placeholder={t('notifTitlePlaceholder')}
+            />
+            <div className="ac-field-meta">
+              {fieldErrors.title ? (
+                <p id="notif-title-error" className="ac-field-error" role="alert">
+                  {t(fieldErrors.title)}
+                </p>
+              ) : (
+                <span />
+              )}
+              <span id="notif-title-count" className="ac-char-count">
+                {t('notifCharCount')
+                  .replace('{used}', String(title.trim().length))
+                  .replace('{max}', String(TITLE_MAX))}
+              </span>
+            </div>
+          </div>
+          <div className={`ac-field${fieldErrors.body ? ' is-invalid' : ''}`}>
+            <label htmlFor="notif-message">
+              {t('notifMessage')} <span className="ac-required">*</span>
+            </label>
+            <textarea
+              ref={bodyRef}
+              id="notif-message"
+              rows={4}
+              value={body}
+              maxLength={MESSAGE_MAX}
+              aria-invalid={Boolean(fieldErrors.body)}
+              aria-describedby={fieldErrors.body ? 'notif-message-error' : 'notif-message-count'}
+              onChange={(e) => {
+                setBody(e.target.value);
+                if (fieldErrors.body) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    body: validateNotificationFields({ title, body: e.target.value, imageUrl }).body,
+                  }));
+                }
+              }}
+              onBlur={() => {
+                if (body.length > 0 || fieldErrors.body) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    body: validateNotificationFields({ title, body, imageUrl }).body,
+                  }));
+                }
+              }}
+              placeholder={t('notifMessagePlaceholder')}
+            />
+            <div className="ac-field-meta">
+              {fieldErrors.body ? (
+                <p id="notif-message-error" className="ac-field-error" role="alert">
+                  {t(fieldErrors.body)}
+                </p>
+              ) : (
+                <span />
+              )}
+              <span id="notif-message-count" className="ac-char-count">
+                {t('notifCharCount')
+                  .replace('{used}', String(body.trim().length))
+                  .replace('{max}', String(MESSAGE_MAX))}
+              </span>
+            </div>
+          </div>
+          <div className={`ac-field${fieldErrors.imageUrl ? ' is-invalid' : ''}`}>
+            <label htmlFor="notif-image-file">{t('notifHeroImage')}</label>
+            <input id="notif-image-file" type="file" accept="image/*" onChange={handleImageFile} />
+            {imageFileName ? (
+              <p className="ac-hint">{t('notifImageSelected').replace('{name}', imageFileName)}</p>
+            ) : null}
+            <input
+              ref={imageUrlRef}
+              id="notif-image-url"
+              type="url"
+              value={pastedImageUrl}
+              aria-invalid={Boolean(fieldErrors.imageUrl)}
+              aria-describedby={fieldErrors.imageUrl ? 'notif-image-error' : 'notif-image-hint'}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                setImageFileName('');
+                if (fieldErrors.imageUrl) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    imageUrl: validateNotificationFields({ title, body, imageUrl: e.target.value }).imageUrl,
+                  }));
+                }
+              }}
+              onBlur={() => {
+                if (pastedImageUrl || fieldErrors.imageUrl) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    imageUrl: validateNotificationFields({ title, body, imageUrl }).imageUrl,
+                  }));
+                }
+              }}
+              placeholder={t('notifImageUrlPlaceholder')}
+              style={{ marginTop: 8 }}
+            />
+            {fieldErrors.imageUrl ? (
+              <p id="notif-image-error" className="ac-field-error" role="alert">
+                {t(fieldErrors.imageUrl)}
+              </p>
+            ) : (
+              <p id="notif-image-hint" className="ac-hint">{t('notifHeroImageHint')}</p>
+            )}
+          </div>
+          <button type="submit" className="ac-btn ac-btn-orange" disabled={sending}>
+            {sending ? t('loadingData') : t('sendNotification')}
+          </button>
+          <button
+            type="button"
+            className="ac-btn ac-btn-ghost"
+            style={{ marginInlineStart: 8 }}
+            onClick={showPreview}
+          >
+            {t('preview')}
+          </button>
+        </form>
         {preview && (
           <div
             style={{
@@ -187,10 +418,8 @@ export function NotificationsPage() {
               <b style={{ fontSize: '0.8rem' }}>the Boss</b>
               <span style={{ fontSize: '0.7rem', color: 'var(--ac-gray-mid)' }}>{t('now')}</span>
             </div>
-            <b style={{ fontSize: '0.86rem' }}>{title || t('notifTitlePlaceholder')}</b>
-            <div style={{ fontSize: '0.82rem', color: 'var(--ac-gray-mid)' }}>
-              {body || t('notifMessagePlaceholder')}
-            </div>
+            <b style={{ fontSize: '0.86rem' }}>{title.trim()}</b>
+            <div style={{ fontSize: '0.82rem', color: 'var(--ac-gray-mid)' }}>{body.trim()}</div>
             {imageUrl ? (
               <img
                 src={imageUrl}
@@ -207,7 +436,7 @@ export function NotificationsPage() {
         {loadingHistory ? (
           <p>{t('loadingData')}</p>
         ) : history.length === 0 ? (
-          <p className="ac-hint">No notifications sent yet.</p>
+          <p className="ac-hint">{t('notifHistoryEmpty')}</p>
         ) : (
           history.map((n) => (
             <div key={n.id} className="ac-notif-item">
