@@ -18,7 +18,7 @@ export function SquadManageModal({ squad, maxMembers, onClose, onChanged }: Squa
   const [success, setSuccess] = useState('');
   const [unassigned, setUnassigned] = useState<UnassignedEmployee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const remaining = squad.remainingSeats ?? Math.max(0, maxMembers - squad.members.length);
+  const remaining = Math.max(0, maxMembers - squad.members.length);
 
   useEffect(() => {
     squadService
@@ -63,12 +63,14 @@ export function SquadManageModal({ squad, maxMembers, onClose, onChanged }: Squa
       await squadService.adminAssignMember({
         squadId: squad.id,
         userId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        building: user.buildingName,
-        openToTravel: user.openToTravel,
+        firstName: (user.firstName ?? '').trim() || 'Employee',
+        lastName: (user.lastName ?? '').trim() || '-',
+        building: user.buildingName || undefined,
+        openToTravel: Boolean(user.openToTravel),
       });
       setSelectedUserId('');
+      const items = await squadService.listUnassignedEmployees().catch(() => unassigned);
+      setUnassigned(items.filter((u) => u.id !== user.id));
       setSuccess(t('squadMemberAdded'));
     });
   };

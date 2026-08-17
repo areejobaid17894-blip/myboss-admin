@@ -1,4 +1,4 @@
-export type AppEnvironment = 'development' | 'demo' | 'uat' | 'production';
+export type AppEnvironment = 'development' | 'demo' | 'uat' | 'preprod' | 'production';
 
 interface EnvConfig {
   authApiUrl: string;
@@ -9,10 +9,15 @@ interface EnvConfig {
   appEnv: AppEnvironment;
 }
 
-function requireEnv(key: string): string {
-  const value = import.meta.env[key];
-  if (!value) throw new Error(`Missing required environment variable: ${key}`);
-  return value as string;
+interface RuntimeConfig {
+  VITE_API_URL?: string;
+  VITE_APP_ENV?: string;
+}
+
+declare global {
+  interface Window {
+    __MYBOSS_RUNTIME__?: RuntimeConfig;
+  }
 }
 
 function alignApiUrlToPageHost(apiUrl: string, appEnv: AppEnvironment): string {
@@ -20,6 +25,7 @@ function alignApiUrlToPageHost(apiUrl: string, appEnv: AppEnvironment): string {
   if (appEnv !== 'development' && appEnv !== 'demo') return apiUrl;
   try {
     const parsed = new URL(apiUrl);
+    if (parsed.protocol === 'https:') return apiUrl;
     const pageHost = window.location.hostname;
     if (parsed.hostname !== pageHost) {
       parsed.hostname = pageHost;
@@ -46,20 +52,34 @@ function fromSingleOrigin(origin: string, appEnv: AppEnvironment): EnvConfig {
   };
 }
 
+function runtimeConfig(): RuntimeConfig {
+  if (typeof window === 'undefined') return {};
+  return window.__MYBOSS_RUNTIME__ ?? {};
+}
+
 function loadEnvConfig(): EnvConfig {
+  const runtime = runtimeConfig();
   const gatewayOrigin = import.meta.env.VITE_API_GATEWAY_ORIGIN as string | undefined;
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  const appEnv = (import.meta.env.VITE_APP_ENV as AppEnvironment) || 'development';
+  const apiUrl =
+    runtime.VITE_API_URL?.trim() ||
+    (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  const appEnv = (runtime.VITE_APP_ENV?.trim() ||
+    (import.meta.env.VITE_APP_ENV as AppEnvironment) ||
+    'development') as AppEnvironment;
 
   if (gatewayOrigin?.trim()) {
     return fromSingleOrigin(gatewayOrigin.trim(), appEnv);
   }
-  if (apiUrl?.trim()) {
-    return fromSingleOrigin(apiUrl.trim(), appEnv);
+  if (apiUrl) {
+    return fromSingleOrigin(apiUrl, appEnv);
   }
 
-  const fallback = requireEnv('VITE_AUTH_API_URL');
-  return fromSingleOrigin(fallback, appEnv);
+  const fallback = import.meta.env.VITE_AUTH_API_URL as string | undefined;
+  if (fallback?.trim()) {
+    return fromSingleOrigin(fallback.trim(), appEnv);
+  }
+
+  return fromSingleOrigin('http://127.0.0.1:3001/api/v1', appEnv);
 }
 
 export const env: EnvConfig = loadEnvConfig();

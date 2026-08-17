@@ -22,7 +22,12 @@ const CODE_TO_KEY: Record<string, TranslationKey> = {
   UNAUTHORIZED: 'errorUnauthorized',
   FORBIDDEN: 'errorForbidden',
   NOT_FOUND: 'errorNotFound',
+  USER_NOT_FOUND: 'errorNotFound',
   SQUAD_NAME_TAKEN: 'errorSquadNameTaken',
+  SQUAD_ALREADY_MEMBER: 'errorSquadAlreadyMember',
+  SQUAD_JOIN_REQUEST_EXISTS: 'errorValidation',
+  SQUAD_FULL: 'errorSquadFull',
+  SQUAD_NAME_INVALID: 'errorValidation',
   VALIDATION_FAILED: 'errorValidation',
   INTERNAL_ERROR: 'errorGeneric',
   BACKEND_UNAVAILABLE: 'errorBackendUnavailable',
@@ -46,8 +51,22 @@ const ORANGE_CODE_TO_KEY: Record<number, TranslationKey> = {
   51: 'errorForbidden',
   52: 'errorAuthNotEligible',
   60: 'errorNotFound',
-  69: 'errorValidation',
+  // 69 is shared (name taken / already member / join exists) — resolved in resolveErrorKey.
 };
+
+function conflictKeyFromMessage(data: ApiErrorBody | undefined): TranslationKey {
+  const text = `${data?.reason ?? ''} ${data?.message ?? ''}`.toLowerCase();
+  if (text.includes('already in a squad') || text.includes('بالفعل في فريق')) {
+    return 'errorSquadAlreadyMember';
+  }
+  if (text.includes('join request') || text.includes('طلب الانضمام')) {
+    return 'errorValidation';
+  }
+  if (text.includes('full') || text.includes('مكتمل')) {
+    return 'errorSquadFull';
+  }
+  return 'errorSquadNameTaken';
+}
 
 function looksLikeOtpFailure(data: ApiErrorBody | undefined): boolean {
   const text = `${data?.reason ?? ''} ${data?.message ?? ''}`.toLowerCase();
@@ -78,9 +97,9 @@ function resolveErrorKey(
     if (looksLikeOtpFailure(data)) return 'errorAuthInvalidOtp';
     return 'errorAuthInvalidCredentials';
   }
-  // Orange 69 = several conflicts; prefer backend localized message when present.
+  // Orange 69 = several conflicts; map duplicate-name (and peers) from message / default.
   if (code === 69) {
-    return undefined;
+    return conflictKeyFromMessage(data);
   }
   if (ORANGE_CODE_TO_KEY[code]) {
     return ORANGE_CODE_TO_KEY[code];

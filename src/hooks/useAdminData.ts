@@ -154,9 +154,15 @@ export function useAdminData() {
   const [settings, setSettings] = useState<EmployeeSettings | null>(null);
   const [destOverrides, setDestOverrides] = useState(loadDestinationOverrides);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const reload = useCallback(async (options?: unknown) => {
+    const silent =
+      typeof options === 'object' &&
+      options !== null &&
+      (options as { silent?: boolean }).silent === true;
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const [statsRes, squadsRes, usersRes, reportRes, galleryRes, settingsRes] = await Promise.allSettled([
         squadService.getStats(),
@@ -167,28 +173,31 @@ export function useAdminData() {
         configService.getEmployeeSettings(),
       ]);
 
+      if (squadsRes.status === 'fulfilled') {
+        setSquadsRaw(squadsRes.value);
+      }
       setStats(settledValue(statsRes, null));
-      setSquadsRaw(settledValue(squadsRes, [] as Squad[]));
-      setUsers(settledValue(usersRes, [] as User[]));
+      if (usersRes.status === 'fulfilled') {
+        setUsers(usersRes.value);
+      }
       setReport(settledValue(reportRes, null));
       setGallery(settledValue(galleryRes, [] as GalleryItem[]));
       setSettings(settledValue(settingsRes, null)?.data ?? null);
       setDestOverrides(loadDestinationOverrides());
 
-      if (statsRes.status === 'rejected' && squadsRes.status === 'rejected') {
-        console.error('Admin data load failed', statsRes.reason, squadsRes.reason, usersRes);
-        setError(t('adminDataLoadFailed'));
-      } else if (squadsRes.status === 'rejected') {
+      if (squadsRes.status === 'rejected') {
         console.error('Admin squads load failed', squadsRes.reason);
-        setError(t('adminDataLoadFailed'));
+        if (!silent) setError(t('adminDataLoadFailed'));
+      } else if (!silent) {
+        setError('');
       } else if (usersRes.status === 'rejected') {
         console.error('Admin users load failed', usersRes.reason);
       }
     } catch (err) {
       console.error('Admin data load failed', err);
-      setError(t('adminDataLoadFailed'));
+      if (!silent) setError(t('adminDataLoadFailed'));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [t]);
 

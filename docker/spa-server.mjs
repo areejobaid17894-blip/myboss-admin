@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Minimal static SPA server for admin portal.
- * Same port 80 as before; SPA fallback to index.html; /health for probes.
+ * Static SPA server. App config is injected at runtime from GitLab CI/CD
+ * variables (container env). The image itself has no environment secrets.
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, 'dist');
-const PORT = Number(process.env.PORT || 80);
+const PORT = Number(process.env.PORT || process.env.APP_PORT || 80);
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -26,6 +26,14 @@ const TYPES = {
   '.woff2': 'font/woff2',
   '.map': 'application/json',
 };
+
+function runtimeConfigJs() {
+  const payload = {
+    VITE_API_URL: process.env.VITE_API_URL || '',
+    VITE_APP_ENV: process.env.VITE_APP_ENV || process.env.APP_ENV || 'production',
+  };
+  return `window.__MYBOSS_RUNTIME__=${JSON.stringify(payload)};`;
+}
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
@@ -47,12 +55,21 @@ function safeJoin(root, reqPath) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.method === 'GET' && (req.url === '/health' || req.url?.startsWith('/health?'))) {
+  const url = req.url || '/';
+  if (req.method === 'GET' && (url === '/health' || url.startsWith('/health?'))) {
     send(res, 200, 'OK', { 'Content-Type': 'text/plain' });
     return;
   }
 
-  let filePath = safeJoin(ROOT, req.url === '/' ? '/index.html' : req.url);
+  if (req.method === 'GET' && (url === '/runtime-config.js' || url.startsWith('/runtime-config.js?'))) {
+    send(res, 200, runtimeConfigJs(), {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    return;
+  }
+
+  let filePath = safeJoin(ROOT, url === '/' ? '/index.html' : url);
   if (!filePath) {
     send(res, 400, 'Bad Request', { 'Content-Type': 'text/plain' });
     return;

@@ -9,6 +9,7 @@ import {
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useToast } from '@/hooks/useToast';
 import { downloadCsv } from '@/lib/csvExport';
+import { getApiErrorMessage } from '@/api/errors';
 import { useI18n } from '@/i18n';
 
 export function UnregisteredPage() {
@@ -32,8 +33,8 @@ export function UnregisteredPage() {
         statusFilter === 'all' ? undefined : statusFilter,
       );
       setData(res);
-    } catch {
-      setError(t('errorGeneric'));
+    } catch (err) {
+      setError(getApiErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -52,8 +53,8 @@ export function UnregisteredPage() {
       setStatusFilter('pending');
       logAction(`Ran squad allocation — ${res.summary.total} proposal(s).`);
       showToast(t('allocRunDone').replace('{n}', String(res.summary.total)));
-    } catch {
-      showToast(t('errorGeneric'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t));
     } finally {
       setRunning(false);
     }
@@ -66,8 +67,8 @@ export function UnregisteredPage() {
       logAction(`Confirmed allocation: ${p.firstName} ${p.lastName} → ${p.squadName}.`);
       showToast(`${p.firstName} → ${p.squadName}`);
       await load();
-    } catch {
-      showToast(t('errorGeneric'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t));
     } finally {
       setActingId(null);
     }
@@ -80,8 +81,8 @@ export function UnregisteredPage() {
       logAction(`Rejected allocation: ${p.firstName} ${p.lastName} → ${p.squadName}.`);
       showToast(t('allocRejected'));
       await load();
-    } catch {
-      showToast(t('errorGeneric'));
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t));
     } finally {
       setActingId(null);
     }

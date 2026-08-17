@@ -1,22 +1,30 @@
 # myboss-admin
 
-React admin portal (Vite **6**, React **19**). One API: `http://<host>:3001/api/v1`.
+React admin portal (Vite **6**, React **19**). API: `http://<host>:3001/api/v1`.
 
-Deploy: **DevOps CI/CD** builds `myboss-admin/docker/Dockerfile` (port **8081**). See [DEVOPS](https://github.com/areejobaid17894-blip/myboss-platform/-/blob/master/docs/devops/DEVOPS.md).
+**DevOps:** clone this repo and `myboss-backend`. Do **not** use `myboss-platform`.
 
-## Run
+| | |
+|--|--|
+| Dockerfile | `docker/Dockerfile` |
+| GitLab variables (runtime) | [`docs/gitlab/gitlab-preprod.env.example`](docs/gitlab/gitlab-preprod.env.example) · [`gitlab-production.env.example`](docs/gitlab/gitlab-production.env.example) |
 
-API must be up (`curl http://127.0.0.1:3001/api/v1/health`).
+The image has **no build args and no baked URLs**. GitLab injects `VITE_API_URL` and `VITE_APP_ENV` as container env; `spa-server.mjs` serves them at `/runtime-config.js`.
 
-| Mode | Command | URL |
-|------|---------|-----|
-| Docker | `cd ../myboss-platform && docker compose up -d --build` | http://\<DEMO_HOST\>:8081/login |
-| Vite | `npm install && npm run dev` | http://127.0.0.1:5173 |
+```bash
+docker build -f docker/Dockerfile -t myboss-admin .
+docker run -e VITE_API_URL=https://<api-ingress>/api/v1 -e VITE_APP_ENV=preprod -p 8081:80 myboss-admin
+```
 
-Copy `.env.example` → `.env.development` for Vite.  
-Production / preprod Vite keys: `.env.production.example`, `.env.preprod.example` (GitLab variables at **image build**).
+Local Vite:
 
-Login: `admin@orange.com` / `admin123` → OTP emailed.
+```bash
+cp .env.example .env.development
+npm install
+npm run dev
+```
+
+Login: `areej.obaid@orange.com` / `admin123` → OTP emailed.
 
 ---
 

@@ -4,6 +4,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.development.example
 !.env.production.example
 !.env.preprod.example
 **/tsconfig.tsbuildinfo

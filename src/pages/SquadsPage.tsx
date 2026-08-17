@@ -72,12 +72,12 @@ export function SquadsPage() {
       ],
     );
 
-  if (loading) return <p>{t('loadingData')}</p>;
-  if (error) {
+  if (loading && !squads.length) return <p>{t('loadingData')}</p>;
+  if (error && !squads.length) {
     return (
       <div>
         <div className="ac-error">{error}</div>
-        <button type="button" className="ac-btn ac-btn-orange" onClick={reload}>
+        <button type="button" className="ac-btn ac-btn-orange" onClick={() => void reload()}>
           {t('retry')}
         </button>
       </div>
@@ -90,7 +90,7 @@ export function SquadsPage() {
         titleKey="configSectionSquad"
         descKey="configSectionSquadDesc"
         fields={SQUAD_SETTINGS_FIELDS}
-        onSaved={() => reload()}
+        onSaved={() => void reload({ silent: true })}
       />
       <SquadJoinDeadlineCard />
       <div className="ac-card">
@@ -152,7 +152,7 @@ export function SquadsPage() {
                     </b>
                     {s.members.length < maxMembers && (
                       <span className="ac-badge ac-b-yellow" style={{ marginInlineStart: 6 }}>
-                        {(s.remainingSeats ?? maxMembers - s.members.length)} {t('open')}
+                        {Math.max(0, maxMembers - s.members.length)} {t('open')}
                       </span>
                     )}
                   </td>
@@ -243,7 +243,7 @@ export function SquadsPage() {
         squad={toManageSquad(squads.find((s) => s.id === editingId)!, maxMembers)}
         maxMembers={maxMembers}
         onClose={() => setEditingId(null)}
-        onChanged={reload}
+        onChanged={() => void reload({ silent: true })}
       />
     )}
     </div>
